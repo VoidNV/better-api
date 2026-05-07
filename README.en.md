@@ -1,53 +1,40 @@
 <div align="center">
 
-![new-api](/web/default/public/logo.png)
+<img src="./banner.png" alt="better-api banner" width="100%" />
 
-# New API
+# better-api
 
-🍥 **Next-Generation Large Model Gateway and AI Asset Management System**
-
-<p align="center">
-  <a href="./README.md">中文</a> | 
-  <strong>English</strong> | 
-  <a href="./README.fr.md">Français</a> | 
-  <a href="./README.ja.md">日本語</a>
-</p>
+**A focused fork of New API for practical AI gateway deployments.**
 
 <p align="center">
-  <a href="https://raw.githubusercontent.com/Calcium-Ion/new-api/main/LICENSE">
-    <img src="https://img.shields.io/github/license/Calcium-Ion/new-api?color=brightgreen" alt="license">
+  <a href="https://github.com/VoidNV/better-api">
+    <img src="https://img.shields.io/badge/project-better--api-8A2BE2" alt="better-api">
   </a>
-  <a href="https://github.com/Calcium-Ion/new-api/releases/latest">
-    <img src="https://img.shields.io/github/v/release/Calcium-Ion/new-api?color=brightgreen&include_prereleases" alt="release">
+  <a href="https://github.com/QuantumNous/new-api">
+    <img src="https://img.shields.io/badge/forked%20from-New%20API-00BFFF" alt="Forked from New API">
   </a>
-  <a href="https://github.com/users/Calcium-Ion/packages/container/package/new-api">
-    <img src="https://img.shields.io/badge/docker-ghcr.io-blue" alt="docker">
-  </a>
-  <a href="https://hub.docker.com/r/CalciumIon/new-api">
-    <img src="https://img.shields.io/badge/docker-dockerHub-blue" alt="docker">
-  </a>
-  <a href="https://goreportcard.com/report/github.com/Calcium-Ion/new-api">
-    <img src="https://goreportcard.com/badge/github.com/Calcium-Ion/new-api" alt="GoReportCard">
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/license-AGPL--3.0-brightgreen" alt="license">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://trendshift.io/repositories/8227" target="_blank">
-    <img src="https://trendshift.io/api/badge/repositories/8227" alt="Calcium-Ion%2Fnew-api | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/>
-  </a>
-</p>
-
-<p align="center">
+  <img src="./logo.png" alt="better-api logo" width="88" />
+  <br>
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-key-features">Key Features</a> •
+  <a href="#-fork-notes">Fork Notes</a> •
   <a href="#-deployment">Deployment</a> •
-  <a href="#-documentation">Documentation</a> •
-  <a href="#-help-support">Help</a>
+  <a href="#-documentation">Documentation</a>
 </p>
 
 </div>
 
 ## 📝 Project Description
+
+**better-api** is a fork of [QuantumNous/new-api](https://github.com/QuantumNous/new-api), built for a more focused self-hosted AI API gateway setup. It keeps the upstream New API foundation: provider aggregation, OpenAI-compatible relay endpoints, user management, billing, quotas, and the admin dashboard.
+
+This fork adds the current better-api customizations around deployment safety, payment flows, invite-code onboarding, frontend wording, and practical defaults while continuing to credit the upstream project and documentation.
 
 > [!NOTE]  
 > This is an open-source project developed based on [One API](https://github.com/songquanpeng/one-api)
@@ -56,6 +43,22 @@
 > - This project is for personal learning purposes only, with no guarantee of stability or technical support
 > - Users must comply with OpenAI's [Terms of Use](https://openai.com/policies/terms-of-use) and **applicable laws and regulations**, and must not use it for illegal purposes
 > - According to the [《Interim Measures for the Management of Generative Artificial Intelligence Services》](http://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm), please do not provide any unregistered generative AI services to the public in China.
+
+---
+
+## 🧭 Fork Notes
+
+better-api is not a clean-room rewrite. It is based on New API and keeps the upstream architecture, relay compatibility, documentation references, and AGPL license obligations.
+
+This fork is currently oriented around:
+
+- safer Docker Compose defaults with secrets loaded from `.env`
+- Stripe and crypto top-up improvements
+- invite-code controlled onboarding
+- clearer public-facing wording for hosted AI API gateway use
+- better defaults for a practical self-hosted deployment
+
+For upstream behavior and broader documentation, start with the official New API docs linked below.
 
 ---
 
@@ -105,8 +108,8 @@
 
 ```bash
 # Clone the project
-git clone https://github.com/QuantumNous/new-api.git
-cd new-api
+git clone https://github.com/VoidNV/better-api.git
+cd better-api
 
 # Create local secrets. This file is ignored by git.
 cp .env.example .env
@@ -289,7 +292,7 @@ docker run --name new-api -d --restart always \
 ## 🚢 Deployment
 
 > [!TIP]
-> **Latest Docker image:** `calciumion/new-api:latest`
+> **Docker Compose:** builds `new-api:local` from this fork. Published upstream images remain available as `calciumion/new-api:latest`.
 
 ### 📋 Deployment Requirements
 
@@ -337,8 +340,8 @@ docker run --name new-api -d --restart always \
 
 ```bash
 # Clone the project
-git clone https://github.com/QuantumNous/new-api.git
-cd new-api
+git clone https://github.com/VoidNV/better-api.git
+cd better-api
 
 # Create local secrets. This file is ignored by git.
 cp .env.example .env
@@ -453,7 +456,7 @@ Welcome all forms of contribution!
 
 <div align="center">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Calcium-Ion/new-api&type=Date)](https://star-history.com/#Calcium-Ion/new-api&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=VoidNV/better-api&type=Date)](https://star-history.com/#VoidNV/better-api&Date)
 
 </div>
 
@@ -461,12 +464,12 @@ Welcome all forms of contribution!
 
 <div align="center">
 
-### 💖 Thank you for using New API
+### 💖 Thank you for using better-api
 
 If this project is helpful to you, welcome to give us a ⭐️ Star！
 
-**[Official Documentation](https://docs.newapi.pro/en/docs)** • **[Issue Feedback](https://github.com/Calcium-Ion/new-api/issues)** • **[Latest Release](https://github.com/Calcium-Ion/new-api/releases)**
+**[Upstream Documentation](https://docs.newapi.pro/en/docs)** • **[Fork Issues](https://github.com/VoidNV/better-api/issues)** • **[Upstream New API](https://github.com/QuantumNous/new-api)**
 
-<sub>Built with ❤️ by QuantumNous</sub>
+<sub>better-api is maintained as a fork of New API by VoidNV.</sub>
 
 </div>
