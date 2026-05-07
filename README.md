@@ -7,7 +7,7 @@
 **A focused fork of New API for practical AI gateway deployments.**
 
 <p align="center">
-  <a href="https://github.com/VoidNV/better-api">
+  <a href="https://github.com/V0rzen/better-api">
     <img src="https://img.shields.io/badge/project-better--api-8A2BE2" alt="better-api">
   </a><!--
   --><a href="https://github.com/QuantumNous/new-api">
@@ -64,7 +64,7 @@ For upstream behavior and broader documentation, start with the official New API
 
 ```bash
 # Clone the project
-git clone https://github.com/VoidNV/better-api.git
+git clone https://github.com/V0rzen/better-api.git
 cd better-api
 
 # Create local secrets. This file is ignored by git.
@@ -221,7 +221,7 @@ docker run --name new-api -d --restart always \
 
 ```bash
 # Clone the project
-git clone https://github.com/VoidNV/better-api.git
+git clone https://github.com/V0rzen/better-api.git
 cd better-api
 
 # Create local secrets. This file is ignored by git.
@@ -349,8 +349,8 @@ If your organization's policies do not permit the use of AGPLv3-licensed softwar
 
 If this project is helpful to you, welcome to give us a ⭐️ Star！
 
-**[Upstream Documentation](https://docs.newapi.pro/en/docs)** • **[Fork Issues](https://github.com/VoidNV/better-api/issues)** • **[Upstream New API](https://github.com/QuantumNous/new-api)**
+**[Upstream Documentation](https://docs.newapi.pro/en/docs)** • **[Fork Issues](https://github.com/V0rzen/better-api/issues)** • **[Upstream New API](https://github.com/QuantumNous/new-api)**
 
-<sub>better-api is maintained as a fork of New API by VoidNV.</sub>
+<sub>better-api is maintained as a fork of New API by V0rzen.</sub>
 
 </div>
