@@ -48,6 +48,7 @@ func SetApiRouter(router *gin.Engine) {
 
 		apiRouter.POST("/stripe/webhook", controller.StripeWebhook)
 		apiRouter.POST("/creem/webhook", controller.CreemWebhook)
+		apiRouter.POST("/nowpayments/webhook", controller.NowPaymentsWebhook)
 		apiRouter.POST("/waffo/webhook", controller.WaffoWebhook)
 		//apiRouter.POST("/waffo-pancake/webhook", controller.WaffoPancakeWebhook)
 
@@ -91,6 +92,8 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/stripe/pay", middleware.CriticalRateLimit(), controller.RequestStripePay)
 				selfRoute.POST("/stripe/amount", controller.RequestStripeAmount)
 				selfRoute.POST("/creem/pay", middleware.CriticalRateLimit(), controller.RequestCreemPay)
+				selfRoute.POST("/nowpayments/amount", controller.RequestNowPaymentsAmount)
+				selfRoute.POST("/nowpayments/pay", middleware.CriticalRateLimit(), controller.RequestNowPaymentsPay)
 				selfRoute.POST("/waffo/amount", controller.RequestWaffoAmount)
 				selfRoute.POST("/waffo/pay", middleware.CriticalRateLimit(), controller.RequestWaffoPay)
 				//selfRoute.POST("/waffo-pancake/amount", controller.RequestWaffoPancakeAmount)
@@ -284,6 +287,14 @@ func SetApiRouter(router *gin.Engine) {
 			redemptionRoute.PUT("/", controller.UpdateRedemption)
 			redemptionRoute.DELETE("/invalid", controller.DeleteInvalidRedemption)
 			redemptionRoute.DELETE("/:id", controller.DeleteRedemption)
+		}
+		inviteCodeRoute := apiRouter.Group("/invite-code")
+		inviteCodeRoute.Use(middleware.AdminAuth())
+		{
+			inviteCodeRoute.GET("/", controller.GetAllInviteCodes)
+			inviteCodeRoute.GET("/search", controller.SearchInviteCodes)
+			inviteCodeRoute.POST("/", controller.AddInviteCodes)
+			inviteCodeRoute.DELETE("/:id", controller.DeleteInviteCode)
 		}
 		logRoute := apiRouter.Group("/log")
 		logRoute.GET("/", middleware.AdminAuth(), controller.GetAllLogs)

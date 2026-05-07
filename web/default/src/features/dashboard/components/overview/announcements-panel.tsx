@@ -24,6 +24,21 @@ const AnnouncementStatusDot = memo(function AnnouncementStatusDot(props: {
   )
 })
 
+function getTypeLabel(type: string | undefined) {
+  switch (type) {
+    case 'ongoing':
+      return 'Ongoing'
+    case 'success':
+      return 'Success'
+    case 'warning':
+      return 'Warning'
+    case 'error':
+      return 'Error'
+    default:
+      return 'Update'
+  }
+}
+
 export function AnnouncementsPanel() {
   const { t } = useTranslation()
   const { items: list, loading } = useAnnouncements()
@@ -50,7 +65,8 @@ export function AnnouncementsPanel() {
       height='h-56 sm:h-64'
     >
       <ScrollArea className='h-56 sm:h-64'>
-        <div className='-mx-3 sm:-mx-5'>
+        <div className='relative mx-1 space-y-3 pl-4 sm:mx-0'>
+          <div className='bg-border absolute top-4 bottom-4 left-[7px] w-px' />
           {list.map((item: AnnouncementItem, idx: number) => {
             const key = item.id ?? `announcement-${idx}`
             return (
@@ -59,26 +75,31 @@ export function AnnouncementsPanel() {
                 type='button'
                 onClick={() => handleAnnouncementClick(item)}
                 className={cn(
-                  'group hover:bg-muted/40 w-full px-3 py-3 text-left transition-colors sm:px-5 sm:py-3.5',
-                  idx < list.length - 1 && 'border-border/60 border-b'
+                  'group relative w-full rounded-lg border bg-background px-3 py-3 text-left shadow-xs transition-colors hover:bg-muted/40',
+                  idx === 0 && 'border-primary/30'
                 )}
               >
-                <div className='flex items-start gap-2.5'>
+                <span className='absolute top-4 -left-[13px]'>
                   <AnnouncementStatusDot type={item.type} />
+                </span>
+                <div className='space-y-2'>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <span className='bg-muted rounded-full px-2 py-0.5 text-xs font-medium'>
+                      {t(getTypeLabel(item.type))}
+                    </span>
+                    {item.publishDate && (
+                      <time className='text-muted-foreground/70 text-xs'>
+                        {formatDateTimeObject(new Date(item.publishDate))}
+                      </time>
+                    )}
+                  </div>
                   <div className='min-w-0 flex-1 space-y-1'>
                     <p className='line-clamp-1 text-sm font-medium'>
                       {getPreviewText(item.content)}
                     </p>
-                    <div className='flex items-center justify-between'>
-                      {item.publishDate && (
-                        <time className='text-muted-foreground/60 text-xs'>
-                          {formatDateTimeObject(new Date(item.publishDate))}
-                        </time>
-                      )}
-                      <span className='text-muted-foreground/40 text-xs opacity-0 transition-opacity group-hover:opacity-100'>
-                        {t('Click for details')}
-                      </span>
-                    </div>
+                    <span className='text-muted-foreground/50 text-xs opacity-0 transition-opacity group-hover:opacity-100'>
+                      {t('Click for details')}
+                    </span>
                   </div>
                 </div>
               </button>

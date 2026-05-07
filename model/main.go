@@ -65,6 +65,20 @@ var DB *gorm.DB
 
 var LOG_DB *gorm.DB
 
+func applySQLitePerformancePragmas(db *gorm.DB, label string) {
+	pragmas := []string{
+		"PRAGMA busy_timeout = 30000",
+		"PRAGMA journal_mode = WAL",
+		"PRAGMA synchronous = NORMAL",
+		"PRAGMA temp_store = MEMORY",
+	}
+	for _, pragma := range pragmas {
+		if err := db.Exec(pragma).Error; err != nil {
+			common.SysLog(fmt.Sprintf("failed to apply SQLite pragma on %s (%s): %s", label, pragma, err.Error()))
+		}
+	}
+}
+
 func createRootAccountIfNeed() error {
 	var user User
 	//if user.Status != common.UserStatusEnabled {
@@ -194,6 +208,9 @@ func InitDB() (err error) {
 		sqlDB.SetMaxIdleConns(common.GetEnvOrDefault("SQL_MAX_IDLE_CONNS", 100))
 		sqlDB.SetMaxOpenConns(common.GetEnvOrDefault("SQL_MAX_OPEN_CONNS", 1000))
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(common.GetEnvOrDefault("SQL_MAX_LIFETIME", 60)))
+		if common.UsingSQLite {
+			applySQLitePerformancePragmas(DB, "main database")
+		}
 
 		if !common.IsMasterNode {
 			return nil
@@ -234,6 +251,9 @@ func InitLogDB() (err error) {
 		sqlDB.SetMaxIdleConns(common.GetEnvOrDefault("SQL_MAX_IDLE_CONNS", 100))
 		sqlDB.SetMaxOpenConns(common.GetEnvOrDefault("SQL_MAX_OPEN_CONNS", 1000))
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(common.GetEnvOrDefault("SQL_MAX_LIFETIME", 60)))
+		if common.LogSqlType == common.DatabaseTypeSQLite {
+			applySQLitePerformancePragmas(LOG_DB, "log database")
+		}
 
 		if !common.IsMasterNode {
 			return nil
@@ -262,6 +282,7 @@ func migrateDB() error {
 		&PasskeyCredential{},
 		&Option{},
 		&Redemption{},
+		&InviteCode{},
 		&Ability{},
 		&Log{},
 		&Midjourney{},
@@ -282,6 +303,9 @@ func migrateDB() error {
 		&UserOAuthBinding{},
 	)
 	if err != nil {
+		return err
+	}
+	if err := repairPostgreSQLSequences(); err != nil {
 		return err
 	}
 	if common.UsingSQLite {
@@ -310,6 +334,7 @@ func migrateDBFast() error {
 		{&PasskeyCredential{}, "PasskeyCredential"},
 		{&Option{}, "Option"},
 		{&Redemption{}, "Redemption"},
+		{&InviteCode{}, "InviteCode"},
 		{&Ability{}, "Ability"},
 		{&Log{}, "Log"},
 		{&Midjourney{}, "Midjourney"},
@@ -352,6 +377,9 @@ func migrateDBFast() error {
 			return err
 		}
 	}
+	if err := repairPostgreSQLSequences(); err != nil {
+		return err
+	}
 	if common.UsingSQLite {
 		if err := ensureSubscriptionPlanTableSQLite(); err != nil {
 			return err
@@ -369,6 +397,53 @@ func migrateLOGDB() error {
 	var err error
 	if err = LOG_DB.AutoMigrate(&Log{}); err != nil {
 		return err
+	}
+	return nil
+}
+
+func repairPostgreSQLSequences() error {
+	if !common.UsingPostgreSQL {
+		return nil
+	}
+	if err := DB.Exec(`
+DO $$
+DECLARE
+	seq_record record;
+	max_value bigint;
+BEGIN
+	FOR seq_record IN
+		SELECT
+			seq_ns.nspname AS sequence_schema,
+			seq.relname AS sequence_name,
+			tbl_ns.nspname AS table_schema,
+			tbl.relname AS table_name,
+			attr.attname AS column_name
+		FROM pg_class seq
+		JOIN pg_namespace seq_ns ON seq_ns.oid = seq.relnamespace
+		JOIN pg_depend dep ON dep.objid = seq.oid AND dep.deptype = 'a'
+		JOIN pg_class tbl ON tbl.oid = dep.refobjid
+		JOIN pg_namespace tbl_ns ON tbl_ns.oid = tbl.relnamespace
+		JOIN pg_attribute attr ON attr.attrelid = tbl.oid AND attr.attnum = dep.refobjsubid
+		WHERE seq.relkind = 'S'
+			AND tbl_ns.nspname = current_schema()
+	LOOP
+		EXECUTE format(
+			'SELECT MAX(%I) FROM %I.%I',
+			seq_record.column_name,
+			seq_record.table_schema,
+			seq_record.table_name
+		) INTO max_value;
+
+		EXECUTE format(
+			'SELECT setval(%L::regclass, %s, %L)',
+			quote_ident(seq_record.sequence_schema) || '.' || quote_ident(seq_record.sequence_name),
+			COALESCE(max_value, 1),
+			max_value IS NOT NULL
+		);
+	END LOOP;
+END $$;
+`).Error; err != nil {
+		return fmt.Errorf("failed to repair PostgreSQL sequences: %w", err)
 	}
 	return nil
 }
@@ -591,7 +666,7 @@ func checkMySQLChineseSupport(db *gorm.DB) error {
 	var schemaCharset, schemaCollation string
 	err := db.Raw("SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()").Row().Scan(&schemaCharset, &schemaCollation)
 	if err != nil {
-		return fmt.Errorf("读取当前库默认字符集/排序规则失败 / Failed to read schema default charset/collation: %v", err)
+		return fmt.Errorf("Failed to read the current library default character set/collation / Failed to read schema default charset/collation: %v", err)
 	}
 
 	toLower := func(s string) string { return strings.ToLower(s) }
@@ -623,7 +698,7 @@ func checkMySQLChineseSupport(db *gorm.DB) error {
 
 	// 1) 当前库默认值必须支持中文
 	if !isChineseCapable(schemaCharset, schemaCollation) {
-		return fmt.Errorf("当前库默认字符集/排序规则不支持中文：schema(%s/%s)。请将库设置为 utf8mb4/utf8/gbk/big5/gb18030 / Schema default charset/collation is not Chinese-capable: schema(%s/%s). Please set to utf8mb4/utf8/gbk/big5/gb18030",
+		return fmt.Errorf("The current library default character set/collation does not support Chinese: schema (%s/%s). Please set the library to utf8mb4/utf8/gbk/big5/gb18030 / Schema default charset/collation is not Chinese-capable: schema(%s/%s). Please set to utf8mb4/utf8/gbk/big5/gb18030",
 			schemaCharset, schemaCollation, schemaCharset, schemaCollation)
 	}
 
@@ -634,7 +709,7 @@ func checkMySQLChineseSupport(db *gorm.DB) error {
 	}
 	var tables []tableInfo
 	if err := db.Raw("SELECT TABLE_NAME, TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'").Scan(&tables).Error; err != nil {
-		return fmt.Errorf("读取表排序规则失败 / Failed to read table collations: %v", err)
+		return fmt.Errorf("Failed to read table collation / Failed to read table collations: %v", err)
 	}
 
 	var badTables []string
@@ -666,7 +741,7 @@ func checkMySQLChineseSupport(db *gorm.DB) error {
 			shown = shown[:maxShow]
 		}
 		return fmt.Errorf(
-			"存在不支持中文的表，请修复其排序规则/字符集。示例（最多展示 %d 项）：%v / Found tables not Chinese-capable. Please fix their collation/charset. Examples (showing up to %d): %v",
+			"There is a table that does not support Chinese, please fix its collation/character set. Example (showing up to %d items): %v / Found tables not Chinese-capable. Please fix their collation/charset. Examples (showing up to %d): %v",
 			maxShow, shown, maxShow, shown,
 		)
 	}

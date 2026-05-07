@@ -1,7 +1,6 @@
 import { useNotifications } from '@/hooks/use-notifications'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 import { ConfigDrawer } from '@/components/config-drawer'
-import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationButton } from '@/components/notification-button'
 import { NotificationDialog } from '@/components/notification-dialog'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -108,7 +107,6 @@ export function AppHeader({
                 onClick={() => notifications.openDialog()}
               />
             )}
-            <LanguageSwitcher />
             {showConfigDrawer && <ConfigDrawer />}
             {showProfileDropdown && <ProfileDropdown />}
           </div>

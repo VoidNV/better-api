@@ -61,7 +61,7 @@ export function SummaryCards() {
               value={it.value}
               description={it.desc}
               icon={it.icon}
-              loading={loading}
+              loading={loading && !user}
               action={
                 it.isBalance ? (
                   <Button

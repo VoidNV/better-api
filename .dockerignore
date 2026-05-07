@@ -8,3 +8,6 @@ docs
 .eslintcache
 .gocache
 /web/node_modules
+*.dump
+full_backup.sql
+.codex-translation-cache.json

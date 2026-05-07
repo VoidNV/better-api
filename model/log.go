@@ -17,10 +17,10 @@ import (
 )
 
 type Log struct {
-	Id               int    `json:"id" gorm:"index:idx_created_at_id,priority:1;index:idx_user_id_id,priority:2"`
-	UserId           int    `json:"user_id" gorm:"index;index:idx_user_id_id,priority:1"`
-	CreatedAt        int64  `json:"created_at" gorm:"bigint;index:idx_created_at_id,priority:2;index:idx_created_at_type"`
-	Type             int    `json:"type" gorm:"index:idx_created_at_type"`
+	Id               int    `json:"id" gorm:"index:idx_created_at_id,priority:1;index:idx_user_id_id,priority:2;index:idx_user_created_at_id,priority:3;index:idx_logs_created_id,priority:2"`
+	UserId           int    `json:"user_id" gorm:"index;index:idx_user_id_id,priority:1;index:idx_user_created_at_id,priority:1;index:idx_logs_user_type_created,priority:1"`
+	CreatedAt        int64  `json:"created_at" gorm:"bigint;index:idx_created_at_id,priority:2;index:idx_created_at_type;index:idx_user_created_at_id,priority:2;index:idx_logs_created_id,priority:1;index:idx_logs_type_created,priority:2;index:idx_logs_user_type_created,priority:3"`
+	Type             int    `json:"type" gorm:"index:idx_created_at_type;index:idx_logs_type_created,priority:1;index:idx_logs_user_type_created,priority:2"`
 	Content          string `json:"content"`
 	Username         string `json:"username" gorm:"index;index:index_username_model_name,priority:2;default:''"`
 	TokenName        string `json:"token_name" gorm:"index;default:''"`
@@ -411,15 +411,16 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 	if group != "" {
 		tx = tx.Where("logs."+logGroupCol+" = ?", group)
 	}
-	err = tx.Model(&Log{}).Limit(logSearchCountLimit).Count(&total).Error
+	limitedCountQuery := tx.Session(&gorm.Session{}).Model(&Log{}).Select("logs.id").Limit(logSearchCountLimit)
+	err = LOG_DB.Table("(?) as limited_logs", limitedCountQuery).Count(&total).Error
 	if err != nil {
 		common.SysError("failed to count user logs: " + err.Error())
-		return nil, 0, errors.New("查询日志失败")
+		return nil, 0, errors.New("Failed to query log")
 	}
 	err = tx.Order("logs.id desc").Limit(num).Offset(startIdx).Find(&logs).Error
 	if err != nil {
 		common.SysError("failed to search user logs: " + err.Error())
-		return nil, 0, errors.New("查询日志失败")
+		return nil, 0, errors.New("Failed to query log")
 	}
 
 	formatUserLogs(logs, startIdx)
@@ -478,11 +479,11 @@ func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelNa
 	// 执行查询
 	if err := tx.Scan(&stat).Error; err != nil {
 		common.SysError("failed to query log stat: " + err.Error())
-		return stat, errors.New("查询统计数据失败")
+		return stat, errors.New("Failed to query statistics")
 	}
 	if err := rpmTpmQuery.Scan(&stat).Error; err != nil {
 		common.SysError("failed to query rpm/tpm stat: " + err.Error())
-		return stat, errors.New("查询统计数据失败")
+		return stat, errors.New("Failed to query statistics")
 	}
 
 	return stat, nil

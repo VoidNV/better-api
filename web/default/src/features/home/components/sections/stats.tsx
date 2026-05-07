@@ -1,5 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react'
+import { motion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
+import { Activity, Layers, Route, SlidersHorizontal } from 'lucide-react'
 
 interface CounterProps {
   end: number
@@ -10,7 +12,7 @@ interface CounterProps {
 }
 
 function Counter(props: CounterProps) {
-  const { end, suffix = '', prefix = '', duration = 1600, decimals = 0 } = props
+  const { end, suffix = '', prefix = '', duration = 1800, decimals = 0 } = props
   const ref = useRef<HTMLSpanElement>(null)
   const startedRef = useRef(false)
 
@@ -73,6 +75,8 @@ interface StatItem {
   end: number
   suffix: string
   label: string
+  sub: string
+  icon: React.ReactNode
   decimals?: number
 }
 
@@ -80,31 +84,78 @@ export function Stats(_props: StatsProps) {
   const { t } = useTranslation()
 
   const stats: StatItem[] = [
-    { end: 50, suffix: '+', label: t('upstream services integrated') },
-    { end: 100, suffix: '+', label: t('model billing support') },
-    { end: 50, suffix: '+', label: t('compatible API routes') },
-    { end: 10, suffix: '+', label: t('scheduling controls') },
+    {
+      end: 50,
+      suffix: '+',
+      label: t('Supported providers'),
+      sub: t('Connect major AI vendors through one API'),
+      icon: <Layers className='size-4' strokeWidth={1.5} />,
+    },
+    {
+      end: 100,
+      suffix: '+',
+      label: t('Available models'),
+      sub: t('Use chat, reasoning, image, and embedding models'),
+      icon: <Activity className='size-4' strokeWidth={1.5} />,
+    },
+    {
+      end: 1,
+      suffix: '',
+      label: t('Shared balance'),
+      sub: t('Prepaid credit for your workspace usage'),
+      icon: <Route className='size-4' strokeWidth={1.5} />,
+    },
+    {
+      end: 24,
+      suffix: '/7',
+      label: t('Platform access'),
+      sub: t('Built for teams running live integrations'),
+      icon: <SlidersHorizontal className='size-4' strokeWidth={1.5} />,
+    },
   ]
 
   return (
-    <div className='border-border/40 bg-muted/10 relative z-10 border-y'>
-      <div className='mx-auto max-w-6xl px-6 py-10 md:py-12'>
-        <div className='grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-12'>
-          {stats.map((s) => (
-            <div
+    <section className='relative z-10 border-y border-black/[0.06] bg-white/55 backdrop-blur-xl dark:border-white/[0.06] dark:bg-black'>
+      <div className='mx-auto max-w-6xl px-6 py-16 md:py-20'>
+        <div className='grid grid-cols-2 divide-x divide-y divide-black/[0.06] md:grid-cols-4 md:divide-y-0 dark:divide-white/[0.06]'>
+          {stats.map((s, i) => (
+            <motion.div
               key={s.label}
-              className='flex flex-col items-center text-center'
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{
+                duration: 0.6,
+                delay: i * 0.08,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className='group relative px-6 py-8 first:border-l-0 md:px-8 md:py-10'
             >
-              <span className='text-2xl font-bold tracking-tight md:text-3xl'>
+              <div className='flex items-center gap-2 text-[#6e6e73] transition-colors group-hover:text-[#1d1d1f] dark:text-white/40 dark:group-hover:text-white/70'>
+                {s.icon}
+                <span className='font-mono text-[10px] tracking-[0.2em] uppercase'>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+              </div>
+              <div className='mt-5 text-5xl leading-none font-semibold tracking-normal text-[#1d1d1f] md:text-6xl dark:text-white'>
                 <Counter end={s.end} suffix={s.suffix} decimals={s.decimals} />
-              </span>
-              <span className='text-muted-foreground mt-1.5 text-xs'>
+              </div>
+              <div className='mt-3 text-sm font-medium text-[#1d1d1f]/80 dark:text-white/80'>
                 {s.label}
-              </span>
-            </div>
+              </div>
+              <div className='mt-1 text-xs text-[#6e6e73] dark:text-white/40'>
+                {s.sub}
+              </div>
+
+              {/* Hover sweep */}
+              <div
+                aria-hidden
+                className='pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:via-white/20'
+              />
+            </motion.div>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   )
 }

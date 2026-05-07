@@ -64,14 +64,14 @@ export function useTopNavLinks(): TopNavLink[] {
 
   // Console -> /dashboard (new console path)
   if (modules?.console !== false) {
-    links.push({ title: t('Console'), href: '/dashboard' })
+    links.push({ title: t('Dashboard'), href: '/dashboard' })
   }
 
   // Pricing
   const pricing = modules?.pricing
   if (pricing && typeof pricing === 'object' && pricing.enabled) {
     const disabled = pricing.requireAuth && !isAuthed
-    links.push({ title: t('Model Square'), href: '/pricing', disabled })
+    links.push({ title: t('Model Hub'), href: '/pricing', disabled })
   }
 
   // Docs (supports external links)

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
+import { resetAuthSessionVerified } from '@/lib/auth-session'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -61,6 +62,7 @@ export function DeleteAccountDialog({
         }
 
         reset()
+        resetAuthSessionVerified()
         localStorage.removeItem('user')
         navigate({ to: '/sign-in' })
       } else {

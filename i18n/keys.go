@@ -71,6 +71,14 @@ const (
 	MsgRedemptionExpireTimeInvalid = "redemption.expire_time_invalid"
 )
 
+// Invite code related messages
+const (
+	MsgInviteCodeCountInvalid      = "invite_code.count_invalid"
+	MsgInviteCodeCreateFailed      = "invite_code.create_failed"
+	MsgInviteCodeNoteTooLong       = "invite_code.note_too_long"
+	MsgInviteCodeExpireTimeInvalid = "invite_code.expire_time_invalid"
+)
+
 // User related messages
 const (
 	MsgUserPasswordLoginDisabled     = "user.password_login_disabled"
@@ -98,6 +106,9 @@ const (
 	MsgUserAdminCannotPromote        = "user.admin_cannot_promote"
 	MsgUserOriginalPasswordError     = "user.original_password_error"
 	MsgUserInviteQuotaInsufficient   = "user.invite_quota_insufficient"
+	MsgUserInviteCodeRequired        = "user.invite_code_required"
+	MsgUserInviteCodeInvalid         = "user.invite_code_invalid"
+	MsgUserInviteCodeExpired         = "user.invite_code_expired"
 	MsgUserTransferQuotaMinimum      = "user.transfer_quota_minimum"
 	MsgUserTransferSuccess           = "user.transfer_success"
 	MsgUserTransferFailed            = "user.transfer_failed"

@@ -12,10 +12,10 @@ import (
 // QuotaData 柱状图数据
 type QuotaData struct {
 	Id        int    `json:"id"`
-	UserID    int    `json:"user_id" gorm:"index"`
-	Username  string `json:"username" gorm:"index:idx_qdt_model_user_name,priority:2;size:64;default:''"`
-	ModelName string `json:"model_name" gorm:"index:idx_qdt_model_user_name,priority:1;size:64;default:''"`
-	CreatedAt int64  `json:"created_at" gorm:"bigint;index:idx_qdt_created_at,priority:2"`
+	UserID    int    `json:"user_id" gorm:"index;index:idx_qdt_user_created,priority:1;index:idx_qdt_user_model_time,priority:1"`
+	Username  string `json:"username" gorm:"index:idx_qdt_model_user_name,priority:2;index:idx_qdt_username_created,priority:1;index:idx_qdt_user_model_time,priority:2;size:64;default:''"`
+	ModelName string `json:"model_name" gorm:"index:idx_qdt_model_user_name,priority:1;index:idx_qdt_user_model_time,priority:3;index:idx_qdt_created_model,priority:2;size:64;default:''"`
+	CreatedAt int64  `json:"created_at" gorm:"bigint;index:idx_qdt_created_at;index:idx_qdt_user_created,priority:2;index:idx_qdt_username_created,priority:2;index:idx_qdt_user_model_time,priority:4;index:idx_qdt_created_model,priority:1"`
 	TokenUsed int    `json:"token_used" gorm:"default:0"`
 	Count     int    `json:"count" gorm:"default:0"`
 	Quota     int    `json:"quota" gorm:"default:0"`
@@ -24,7 +24,7 @@ type QuotaData struct {
 func UpdateQuotaData() {
 	for {
 		if common.DataExportEnabled {
-			common.SysLog("正在更新数据看板数据...")
+			common.SysLog("Updating data dashboard data...")
 			SaveQuotaDataCache()
 		}
 		time.Sleep(time.Duration(common.DataExportInterval) * time.Minute)
@@ -33,6 +33,77 @@ func UpdateQuotaData() {
 
 var CacheQuotaData = make(map[string]*QuotaData)
 var CacheQuotaDataLock = sync.Mutex{}
+
+const quotaDashboardCacheTTL = 15 * time.Second
+const quotaDashboardCacheMaxEntries = 256
+
+type quotaDashboardCacheEntry struct {
+	data      []*QuotaData
+	expiresAt time.Time
+}
+
+var quotaDashboardCache = make(map[string]quotaDashboardCacheEntry)
+var quotaDashboardCacheLock = sync.Mutex{}
+
+func pruneQuotaDashboardCacheLocked(now time.Time) {
+	for key, entry := range quotaDashboardCache {
+		if now.After(entry.expiresAt) {
+			delete(quotaDashboardCache, key)
+		}
+	}
+}
+
+func cloneQuotaDataRows(rows []*QuotaData) []*QuotaData {
+	cloned := make([]*QuotaData, 0, len(rows))
+	for _, row := range rows {
+		if row == nil {
+			continue
+		}
+		rowCopy := *row
+		cloned = append(cloned, &rowCopy)
+	}
+	return cloned
+}
+
+func getQuotaDashboardCache(key string) ([]*QuotaData, bool) {
+	quotaDashboardCacheLock.Lock()
+	defer quotaDashboardCacheLock.Unlock()
+
+	entry, ok := quotaDashboardCache[key]
+	if !ok {
+		return nil, false
+	}
+	if time.Now().After(entry.expiresAt) {
+		delete(quotaDashboardCache, key)
+		return nil, false
+	}
+	return cloneQuotaDataRows(entry.data), true
+}
+
+func setQuotaDashboardCache(key string, rows []*QuotaData) {
+	quotaDashboardCacheLock.Lock()
+	defer quotaDashboardCacheLock.Unlock()
+
+	now := time.Now()
+	if len(quotaDashboardCache) >= quotaDashboardCacheMaxEntries {
+		pruneQuotaDashboardCacheLocked(now)
+	}
+	if len(quotaDashboardCache) >= quotaDashboardCacheMaxEntries {
+		quotaDashboardCache = make(map[string]quotaDashboardCacheEntry)
+	}
+
+	quotaDashboardCache[key] = quotaDashboardCacheEntry{
+		data:      cloneQuotaDataRows(rows),
+		expiresAt: now.Add(quotaDashboardCacheTTL),
+	}
+}
+
+func clearQuotaDashboardCache() {
+	quotaDashboardCacheLock.Lock()
+	defer quotaDashboardCacheLock.Unlock()
+
+	quotaDashboardCache = make(map[string]quotaDashboardCacheEntry)
+}
 
 func logQuotaDataCache(userId int, username string, modelName string, quota int, createdAt int64, tokenUsed int) {
 	key := fmt.Sprintf("%d-%s-%s-%d", userId, username, modelName, createdAt)
@@ -86,7 +157,8 @@ func SaveQuotaDataCache() {
 		}
 	}
 	CacheQuotaData = make(map[string]*QuotaData)
-	common.SysLog(fmt.Sprintf("保存数据看板数据成功，共保存%d条数据", size))
+	clearQuotaDashboardCache()
+	common.SysLog(fmt.Sprintf("The data dashboard data was saved successfully, with a total of %d pieces of data saved.", size))
 }
 
 func increaseQuotaData(userId int, username string, modelName string, count int, quota int, createdAt int64, tokenUsed int) {
@@ -102,16 +174,42 @@ func increaseQuotaData(userId int, username string, modelName string, count int,
 }
 
 func GetQuotaDataByUsername(username string, startTime int64, endTime int64) (quotaData []*QuotaData, err error) {
+	cacheKey := fmt.Sprintf("username:%s:%d:%d", username, startTime, endTime)
+	if rows, ok := getQuotaDashboardCache(cacheKey); ok {
+		return rows, nil
+	}
+
 	var quotaDatas []*QuotaData
 	// 从quota_data表中查询数据
-	err = DB.Table("quota_data").Where("username = ? and created_at >= ? and created_at <= ?", username, startTime, endTime).Find(&quotaDatas).Error
+	err = DB.Table("quota_data").
+		Select("user_id, username, model_name, created_at, sum(count) as count, sum(quota) as quota, sum(token_used) as token_used").
+		Where("username = ? and created_at >= ? and created_at <= ?", username, startTime, endTime).
+		Group("user_id, username, model_name, created_at").
+		Order("created_at asc").
+		Find(&quotaDatas).Error
+	if err == nil {
+		setQuotaDashboardCache(cacheKey, quotaDatas)
+	}
 	return quotaDatas, err
 }
 
 func GetQuotaDataByUserId(userId int, startTime int64, endTime int64) (quotaData []*QuotaData, err error) {
+	cacheKey := fmt.Sprintf("user:%d:%d:%d", userId, startTime, endTime)
+	if rows, ok := getQuotaDashboardCache(cacheKey); ok {
+		return rows, nil
+	}
+
 	var quotaDatas []*QuotaData
 	// 从quota_data表中查询数据
-	err = DB.Table("quota_data").Where("user_id = ? and created_at >= ? and created_at <= ?", userId, startTime, endTime).Find(&quotaDatas).Error
+	err = DB.Table("quota_data").
+		Select("user_id, username, model_name, created_at, sum(count) as count, sum(quota) as quota, sum(token_used) as token_used").
+		Where("user_id = ? and created_at >= ? and created_at <= ?", userId, startTime, endTime).
+		Group("user_id, username, model_name, created_at").
+		Order("created_at asc").
+		Find(&quotaDatas).Error
+	if err == nil {
+		setQuotaDashboardCache(cacheKey, quotaDatas)
+	}
 	return quotaDatas, err
 }
 
@@ -121,6 +219,7 @@ func GetQuotaDataGroupByUser(startTime int64, endTime int64) (quotaData []*Quota
 		Select("username, created_at, sum(count) as count, sum(quota) as quota, sum(token_used) as token_used").
 		Where("created_at >= ? and created_at <= ?", startTime, endTime).
 		Group("username, created_at").
+		Order("created_at asc").
 		Find(&quotaDatas).Error
 	return quotaDatas, err
 }
@@ -133,6 +232,11 @@ func GetAllQuotaDates(startTime int64, endTime int64, username string) (quotaDat
 	// 从quota_data表中查询数据
 	// only select model_name, sum(count) as count, sum(quota) as quota, model_name, created_at from quota_data group by model_name, created_at;
 	//err = DB.Table("quota_data").Where("created_at >= ? and created_at <= ?", startTime, endTime).Find(&quotaDatas).Error
-	err = DB.Table("quota_data").Select("model_name, sum(count) as count, sum(quota) as quota, sum(token_used) as token_used, created_at").Where("created_at >= ? and created_at <= ?", startTime, endTime).Group("model_name, created_at").Find(&quotaDatas).Error
+	err = DB.Table("quota_data").
+		Select("model_name, sum(count) as count, sum(quota) as quota, sum(token_used) as token_used, created_at").
+		Where("created_at >= ? and created_at <= ?", startTime, endTime).
+		Group("model_name, created_at").
+		Order("created_at asc").
+		Find(&quotaDatas).Error
 	return quotaDatas, err
 }

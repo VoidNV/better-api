@@ -3,7 +3,7 @@
 export const STATIC_I18N_KEYS = [
   // Header navigation
   'Home',
-  'Console',
+  'Dashboard',
   'Pricing',
   'Docs',
   'About',
@@ -125,22 +125,6 @@ export const STATIC_I18N_KEYS = [
   'AI models supported',
   'uptime',
   'active users',
-  'Lightning Fast',
-  'Optimized network architecture ensures millisecond response times',
-  'Secure & Reliable',
-  'Enterprise-grade security with comprehensive permission management',
-  'Global Coverage',
-  'Multi-region deployment for stable global access',
-  'Developer Friendly',
-  'Complete API documentation with multi-language SDK support',
-  'High Performance',
-  'Support for high concurrency with automatic load balancing',
-  'Transparent Billing',
-  'Pay-as-you-go with real-time usage monitoring',
-  'Team Collaboration',
-  'Multi-user management with flexible permission allocation',
-  'Technical Support',
-  'Professional team providing 24/7 technical support',
 
   // User management (interpolated keys)
   'Remaining Quota ({{currency}})',

@@ -56,6 +56,7 @@ export type GeneralSettings = {
   DefaultCollapseSidebar: boolean
   DemoSiteEnabled: boolean
   SelfUseModeEnabled: boolean
+  InviteCodeRequired: boolean
   'checkin_setting.enabled': boolean
   'checkin_setting.min_quota': number
   'checkin_setting.max_quota': number
@@ -172,6 +173,13 @@ export type IntegrationSettings = {
   CreemWebhookSecret: string
   CreemTestMode: boolean
   CreemProducts: string
+  NowPaymentsEnabled: boolean
+  NowPaymentsApiKey: string
+  NowPaymentsIpnSecret: string
+  NowPaymentsFixedRate: boolean
+  NowPaymentsFeePaidByUser: boolean
+  NowPaymentsUnitPrice: number
+  NowPaymentsMinTopUp: number
   WaffoEnabled: boolean
   WaffoApiKey: string
   WaffoPrivateKey: string

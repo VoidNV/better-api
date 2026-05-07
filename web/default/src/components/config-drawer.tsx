@@ -1,6 +1,6 @@
-import { type SVGProps } from 'react'
+import { useEffect, useState, type SVGProps } from 'react'
 import { Root as Radio, Item } from '@radix-ui/react-radio-group'
-import { CircleCheck, RotateCcw, Palette } from 'lucide-react'
+import { ChevronDown, CircleCheck, RotateCcw, Palette } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { IconDir } from '@/assets/custom/icon-dir'
 import { IconLayoutCompact } from '@/assets/custom/icon-layout-compact'
@@ -15,8 +15,14 @@ import { IconThemeSystem } from '@/assets/custom/icon-theme-system'
 import { cn } from '@/lib/utils'
 import { useDirection } from '@/context/direction-provider'
 import { type Collapsible, useLayout } from '@/context/layout-provider'
-import { useTheme } from '@/context/theme-provider'
+import { type ColorPreset, useTheme } from '@/context/theme-provider'
 import { Button } from '@/components/ui/button'
+import {
+  Collapsible as CollapsibleRoot,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { Input } from '@/components/ui/input'
 import {
   Sheet,
   SheetContent,
@@ -64,6 +70,7 @@ export function ConfigDrawer() {
         </SheetHeader>
         <div className='space-y-6 overflow-y-auto px-4'>
           <ThemeConfig />
+          <ColorConfig />
           <SidebarConfig />
           <LayoutConfig />
           <DirConfig />
@@ -211,6 +218,147 @@ function ThemeConfig() {
       <div id='theme-description' className='sr-only'>
         {t('Choose between system preference, light mode, or dark mode')}
       </div>
+    </div>
+  )
+}
+
+const colorPresets: Array<{
+  value: ColorPreset
+  label: string
+  colors: [string, string, string]
+}> = [
+  {
+    value: 'neutral',
+    label: 'Neutral',
+    colors: ['#0a0a0a', '#71717a', '#e4e4e7'],
+  },
+  { value: 'blue', label: 'Blue', colors: ['#007aff', '#34c759', '#ff9500'] },
+  {
+    value: 'violet',
+    label: 'Violet',
+    colors: ['#7c3aed', '#06b6d4', '#f97316'],
+  },
+  { value: 'rose', label: 'Rose', colors: ['#ff2d55', '#007aff', '#34c759'] },
+  {
+    value: 'emerald',
+    label: 'Emerald',
+    colors: ['#10b981', '#007aff', '#f59e0b'],
+  },
+  { value: 'amber', label: 'Amber', colors: ['#ff9500', '#007aff', '#34c759'] },
+]
+
+function isValidHexColor(value: string) {
+  return /^#[0-9a-f]{6}$/i.test(value)
+}
+
+function ColorConfig() {
+  const { t } = useTranslation()
+  const {
+    colorPreset,
+    customAccentColor,
+    defaultColorPreset,
+    setColorPreset,
+    setCustomAccentColor,
+  } = useTheme()
+  const [draftAccent, setDraftAccent] = useState(customAccentColor)
+  const hasCustomColor = colorPreset !== defaultColorPreset
+
+  useEffect(() => {
+    setDraftAccent(customAccentColor)
+  }, [customAccentColor])
+
+  const handleCustomAccentChange = (value: string) => {
+    setDraftAccent(value)
+    if (!isValidHexColor(value)) return
+    setCustomAccentColor(value)
+    setColorPreset('custom')
+  }
+
+  return (
+    <div>
+      <SectionTitle
+        title={t('Color Presets')}
+        showReset={hasCustomColor}
+        onReset={() => setColorPreset(defaultColorPreset)}
+      />
+      <div className='grid grid-cols-2 gap-2 sm:grid-cols-3'>
+        {colorPresets.map((preset) => {
+          const selected = colorPreset === preset.value
+          return (
+            <button
+              key={preset.value}
+              type='button'
+              onClick={() => setColorPreset(preset.value)}
+              className={cn(
+                'border-border bg-card text-card-foreground flex h-16 items-center justify-between rounded-lg border px-3 text-left text-sm shadow-xs transition-[border-color,box-shadow,transform]',
+                'hover:border-primary/50 focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
+                selected && 'border-primary shadow-md'
+              )}
+              aria-pressed={selected}
+            >
+              <span className='font-medium'>{preset.label}</span>
+              <span className='flex -space-x-1' aria-hidden='true'>
+                {preset.colors.map((color) => (
+                  <span
+                    key={color}
+                    className='border-background size-5 rounded-full border-2'
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      <CollapsibleRoot className='mt-3 rounded-lg border'>
+        <CollapsibleTrigger asChild>
+          <button
+            type='button'
+            className='flex w-full items-center justify-between px-3 py-2 text-sm font-medium'
+          >
+            {t('Advanced Color')}
+            <ChevronDown className='text-muted-foreground size-4' />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className='border-t px-3 py-3'>
+            <label className='text-muted-foreground text-xs font-medium'>
+              {t('Custom accent')}
+            </label>
+            <div className='mt-2 flex items-center gap-2'>
+              <Input
+                type='color'
+                value={customAccentColor}
+                onChange={(event) =>
+                  handleCustomAccentChange(event.currentTarget.value)
+                }
+                className='h-10 w-14 cursor-pointer p-1'
+                aria-label={t('Custom accent')}
+              />
+              <Input
+                value={draftAccent}
+                onChange={(event) =>
+                  handleCustomAccentChange(event.currentTarget.value)
+                }
+                onBlur={() => {
+                  if (!isValidHexColor(draftAccent)) {
+                    setDraftAccent(customAccentColor)
+                  }
+                }}
+                className='font-mono uppercase'
+                maxLength={7}
+                aria-label={t('Custom accent hex value')}
+              />
+            </div>
+            <p className='text-muted-foreground mt-2 text-xs leading-relaxed'>
+              {t(
+                'Pick a custom accent color for buttons, focus rings, charts, and sidebar highlights.'
+              )}
+            </p>
+          </div>
+        </CollapsibleContent>
+      </CollapsibleRoot>
     </div>
   )
 }

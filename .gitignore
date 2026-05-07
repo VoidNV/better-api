@@ -35,3 +35,6 @@ data/
 .test
 token_estimator_test.go
 skills-lock.json
+.codex-translation-cache.json
+*.dump
+/full_backup.sql

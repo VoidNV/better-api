@@ -38,7 +38,7 @@ export async function testUrlLatency(url: string): Promise<PingStatus> {
  */
 export function openExternalSpeedTest(url: string): void {
   const encodedUrl = encodeURIComponent(url)
-  const speedTestUrl = `https://www.tcptest.cn/http/${encodedUrl}`
+  const speedTestUrl = `https://check-host.cc/http?host=${encodedUrl}`
   window.open(speedTestUrl, '_blank', 'noopener,noreferrer')
 }
 

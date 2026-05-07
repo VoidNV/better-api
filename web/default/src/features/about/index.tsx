@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Construction } from 'lucide-react'
+import { Construction, Link as LinkIcon, Coins, Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Markdown } from '@/components/ui/markdown'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -21,82 +21,73 @@ function isLikelyHtml(value: string) {
 
 function EmptyAboutState() {
   const { t } = useTranslation()
-  const currentYear = new Date().getFullYear()
+
+  const pillars = [
+    {
+      icon: <LinkIcon className='size-4' strokeWidth={1.5} />,
+      title: t('One unified API'),
+      desc: t(
+        'Access leading AI providers through a single endpoint, with one place to manage credentials, usage, and billing.'
+      ),
+    },
+    {
+      icon: <Coins className='size-4' strokeWidth={1.5} />,
+      title: t('Prepaid platform credit'),
+      desc: t(
+        'Prepaid account credit lets teams fund usage in advance and monitor spending more predictably.'
+      ),
+    },
+    {
+      icon: <Zap className='size-4' strokeWidth={1.5} />,
+      title: t('Published pricing'),
+      desc: t(
+        'Model pricing is published inside the platform so teams can review expected costs before they integrate.'
+      ),
+    },
+  ]
 
   return (
-    <div className='flex min-h-[60vh] items-center justify-center p-8'>
-      <div className='max-w-2xl space-y-6 text-center'>
-        <div className='flex justify-center'>
-          <Construction className='text-muted-foreground h-24 w-24' />
-        </div>
-        <div className='space-y-2'>
-          <h2 className='text-2xl font-bold'>{t('No About Content Set')}</h2>
-          <p className='text-muted-foreground'>
+    <div className='flex min-h-[70vh] items-center justify-center px-6 py-16'>
+      <div className='mx-auto w-full max-w-3xl space-y-12'>
+        <div className='space-y-4 text-center'>
+          <span className='eyebrow'>{t('About')}</span>
+          <h1 className='font-display text-4xl leading-[1.05] tracking-tight md:text-5xl'>
+            {t('A unified AI gateway')}
+            <br />
+            <span className='text-muted-foreground italic'>
+              {t('for developers and businesses.')}
+            </span>
+          </h1>
+          <p className='text-muted-foreground mx-auto max-w-xl text-sm leading-relaxed md:text-base'>
             {t(
-              'The administrator has not configured any about content yet. You can set it in the settings page, supporting HTML or URL.'
+              'This gateway helps teams access supported AI providers through one API, with centralized billing, usage visibility, and a simpler operational workflow.'
             )}
           </p>
         </div>
-        <div className='space-y-4 text-sm'>
-          <p>
-            {t('New API Project Repository:')}{' '}
-            <a
-              href='https://github.com/QuantumNous/new-api'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
+
+        <div className='grid gap-3 md:grid-cols-3'>
+          {pillars.map((p) => (
+            <div
+              key={p.title}
+              className='border-border/60 bg-card/40 rounded-xl border p-5'
             >
-              {t('https://github.com/QuantumNous/new-api')}
-            </a>
-          </p>
-          <p className='text-muted-foreground'>
-            <a
-              href='https://github.com/QuantumNous/new-api'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('NewAPI')}
-            </a>{' '}
-            © {currentYear}{' '}
-            <a
-              href='https://github.com/QuantumNous'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('QuantumNous')}
-            </a>{' '}
-            {t('| Based on')}{' '}
-            <a
-              href='https://github.com/songquanpeng/one-api'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('One API')}
-            </a>{' '}
-            © 2023{' '}
-            <a
-              href='https://github.com/songquanpeng'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('JustSong')}
-            </a>
-          </p>
-          <p className='text-muted-foreground'>
-            {t('This project must be used in compliance with the')}{' '}
-            <a
-              href='https://github.com/QuantumNous/new-api/blob/main/LICENSE'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('AGPL v3.0 License')}
-            </a>
-            .
+              <div className='bg-muted text-muted-foreground flex size-8 items-center justify-center rounded-md'>
+                {p.icon}
+              </div>
+              <h3 className='mt-4 text-sm font-medium'>{p.title}</h3>
+              <p className='text-muted-foreground mt-1.5 text-xs leading-relaxed'>
+                {p.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className='border-border/40 border-t pt-8 text-center'>
+          <Construction className='text-muted-foreground/50 mx-auto size-6' />
+          <p className='text-muted-foreground mt-3 text-xs'>
+            {t(
+              'Additional company, policy, and contact information will be published here by the administrator.'
+            )}
           </p>
         </div>
       </div>

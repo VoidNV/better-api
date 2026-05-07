@@ -37,6 +37,7 @@ const defaultGeneralSettings: GeneralSettings = {
   DefaultCollapseSidebar: false,
   DemoSiteEnabled: false,
   SelfUseModeEnabled: false,
+  InviteCodeRequired: false,
   'checkin_setting.enabled': false,
   'checkin_setting.min_quota': 1000,
   'checkin_setting.max_quota': 10000,
@@ -71,6 +72,7 @@ export function GeneralSettings() {
     | 'quota'
     | 'pricing'
     | 'checkin'
+    | 'invite-codes'
     | 'behavior'
     | 'channel-affinity'
   const sectionContent = getGeneralSectionContent(

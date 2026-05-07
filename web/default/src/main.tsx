@@ -11,6 +11,7 @@ import i18next from 'i18next'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { getStatus } from '@/lib/api'
+import { resetAuthSessionVerified } from '@/lib/auth-session'
 import '@/lib/dayjs'
 import { applyFaviconToDom } from '@/lib/dom-utils'
 import { handleServerError } from '@/lib/handle-server-error'
@@ -62,6 +63,7 @@ const queryClient = new QueryClient({
         if (error.response?.status === 401) {
           toast.error(i18next.t('Session expired!'))
           useAuthStore.getState().auth.reset()
+          resetAuthSessionVerified()
           const redirect = `${router.history.location.href}`
           router.navigate({ to: '/sign-in', search: { redirect } })
         }

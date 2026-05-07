@@ -2,6 +2,7 @@ import axios from 'axios'
 import i18next from 'i18next'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
+import { resetAuthSessionVerified } from '@/lib/auth-session'
 
 // ============================================================================
 // Axios Instance Configuration
@@ -82,6 +83,7 @@ api.interceptors.response.use(
         toast.error(i18next.t('Session expired!'))
         try {
           useAuthStore.getState().auth.reset()
+          resetAuthSessionVerified()
         } catch {
           /* empty */
         }

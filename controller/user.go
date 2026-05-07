@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,6 +21,7 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type LoginRequest struct {
@@ -35,7 +35,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	var loginRequest LoginRequest
-	err := json.NewDecoder(c.Request.Body).Decode(&loginRequest)
+	err := common.DecodeJson(c.Request.Body, &loginRequest)
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
@@ -91,7 +91,9 @@ func Login(c *gin.Context) {
 
 // setup session & cookies and then return user info
 func setupLogin(user *model.User, c *gin.Context) {
-	model.UpdateUserLastLoginAt(user.Id)
+	model.UpdateUserLastLoginAtAsync(user.Id)
+	model.WarmUserCacheAsync(user)
+	userSetting := user.GetSetting()
 	session := sessions.Default(c)
 	session.Set("id", user.Id)
 	session.Set("username", user.Username)
@@ -107,12 +109,17 @@ func setupLogin(user *model.User, c *gin.Context) {
 		"message": "",
 		"success": true,
 		"data": map[string]any{
-			"id":           user.Id,
-			"username":     user.Username,
-			"display_name": user.DisplayName,
-			"role":         user.Role,
-			"status":       user.Status,
-			"group":        user.Group,
+			"id":              user.Id,
+			"username":        user.Username,
+			"display_name":    user.DisplayName,
+			"role":            user.Role,
+			"status":          user.Status,
+			"group":           user.Group,
+			"quota":           user.Quota,
+			"used_quota":      user.UsedQuota,
+			"request_count":   user.RequestCount,
+			"setting":         user.Setting,
+			"sidebar_modules": userSetting.SidebarModules,
 		},
 	})
 }
@@ -144,9 +151,14 @@ func Register(c *gin.Context) {
 		return
 	}
 	var user model.User
-	err := json.NewDecoder(c.Request.Body).Decode(&user)
+	err := common.DecodeJson(c.Request.Body, &user)
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	user.InviteCode = strings.TrimSpace(user.InviteCode)
+	if common.InviteCodeRequired && user.InviteCode == "" {
+		common.ApiErrorI18n(c, i18n.MsgUserInviteCodeRequired)
 		return
 	}
 	if err := common.Validate.Struct(&user); err != nil {
@@ -180,23 +192,47 @@ func Register(c *gin.Context) {
 		Password:    user.Password,
 		DisplayName: user.Username,
 		InviterId:   inviterId,
-		Role:        common.RoleCommonUser, // 明确设置角色为普通用户
+		Role:        common.RoleCommonUser,
 	}
 	if common.EmailVerificationEnabled {
 		cleanUser.Email = user.Email
 	}
-	if err := cleanUser.Insert(inviterId); err != nil {
-		common.ApiError(c, err)
+	err = model.DB.Transaction(func(tx *gorm.DB) error {
+		var inviteCode *model.InviteCode
+		if common.InviteCodeRequired {
+			inviteCode, err = model.GetAndLockInviteCode(tx, user.InviteCode)
+			if err != nil {
+				return err
+			}
+			if err := inviteCode.ValidateConsumable(); err != nil {
+				return err
+			}
+		}
+		if err := cleanUser.InsertWithTx(tx, inviterId); err != nil {
+			return err
+		}
+		if common.InviteCodeRequired {
+			return inviteCode.MarkUsed(tx, cleanUser.Id)
+		}
+		return nil
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, model.ErrInviteCodeExpired):
+			common.ApiErrorI18n(c, i18n.MsgUserInviteCodeExpired)
+		case errors.Is(err, model.ErrInviteCodeInvalid):
+			common.ApiErrorI18n(c, i18n.MsgUserInviteCodeInvalid)
+		default:
+			common.ApiError(c, err)
+		}
 		return
 	}
+	cleanUser.FinalizeOAuthUserCreation(inviterId)
 
-	// 获取插入后的用户ID
-	var insertedUser model.User
-	if err := model.DB.Where("username = ?", cleanUser.Username).First(&insertedUser).Error; err != nil {
+	if cleanUser.Id == 0 {
 		common.ApiErrorI18n(c, i18n.MsgUserRegisterFailed)
 		return
 	}
-	// 生成默认令牌
 	if constant.GenerateDefaultToken {
 		key, err := common.GenerateKey()
 		if err != nil {
@@ -204,15 +240,14 @@ func Register(c *gin.Context) {
 			common.SysLog("failed to generate token key: " + err.Error())
 			return
 		}
-		// 生成默认令牌
 		token := model.Token{
-			UserId:             insertedUser.Id, // 使用插入后的用户ID
-			Name:               cleanUser.Username + "的初始令牌",
+			UserId:             cleanUser.Id,
+			Name:               cleanUser.Username + "'s initial token",
 			Key:                key,
 			CreatedTime:        common.GetTimestamp(),
 			AccessedTime:       common.GetTimestamp(),
-			ExpiredTime:        -1,     // 永不过期
-			RemainQuota:        500000, // 示例额度
+			ExpiredTime:        -1,
+			RemainQuota:        500000,
 			UnlimitedQuota:     true,
 			ModelLimitsEnabled: false,
 		}
@@ -229,7 +264,6 @@ func Register(c *gin.Context) {
 		"success": true,
 		"message": "",
 	})
-	return
 }
 
 func GetAllUsers(c *gin.Context) {
@@ -334,8 +368,12 @@ func TransferAffQuota(c *gin.Context) {
 		return
 	}
 	tran := TransferAffQuotaRequest{}
-	if err := c.ShouldBindJSON(&tran); err != nil {
+	if err := common.DecodeJson(c.Request.Body, &tran); err != nil {
 		common.ApiError(c, err)
+		return
+	}
+	if tran.Quota <= 0 {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
 	}
 	err = user.TransferAffQuotaToQuota(tran.Quota)
@@ -374,7 +412,7 @@ func GetAffCode(c *gin.Context) {
 func GetSelf(c *gin.Context) {
 	id := c.GetInt("id")
 	userRole := c.GetInt("role")
-	user, err := model.GetUserById(id, false)
+	user, err := model.GetSelfUserById(id)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -488,6 +526,7 @@ func generateDefaultSidebarConfig(userRole int) string {
 			"enabled":    true,
 			"channel":    true,
 			"models":     true,
+			"inviteCode": true,
 			"redemption": true,
 			"user":       true,
 			"setting":    false, // 管理员不能访问系统设置
@@ -498,6 +537,7 @@ func generateDefaultSidebarConfig(userRole int) string {
 			"enabled":    true,
 			"channel":    true,
 			"models":     true,
+			"inviteCode": true,
 			"redemption": true,
 			"user":       true,
 			"setting":    true,
@@ -506,9 +546,9 @@ func generateDefaultSidebarConfig(userRole int) string {
 	// 普通用户不包含admin区域
 
 	// 转换为JSON字符串
-	configBytes, err := json.Marshal(defaultConfig)
+	configBytes, err := common.Marshal(defaultConfig)
 	if err != nil {
-		common.SysLog("生成默认边栏配置失败: " + err.Error())
+		common.SysLog("Failed to generate default sidebar configuration:" + err.Error())
 		return ""
 	}
 
@@ -520,12 +560,19 @@ func GetUserModels(c *gin.Context) {
 	if err != nil {
 		id = c.GetInt("id")
 	}
-	user, err := model.GetUserCache(id)
-	if err != nil {
-		common.ApiError(c, err)
-		return
+	userGroup := ""
+	if id == c.GetInt("id") {
+		userGroup = c.GetString("group")
 	}
-	groups := service.GetUserUsableGroups(user.Group)
+	if userGroup == "" {
+		user, err := model.GetUserCache(id)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		userGroup = user.Group
+	}
+	groups := service.GetUserUsableGroups(userGroup)
 	var models []string
 	for group := range groups {
 		for _, g := range model.GetGroupEnabledModels(group) {
@@ -544,7 +591,7 @@ func GetUserModels(c *gin.Context) {
 
 func UpdateUser(c *gin.Context) {
 	var updatedUser model.User
-	err := json.NewDecoder(c.Request.Body).Decode(&updatedUser)
+	err := common.DecodeJson(c.Request.Body, &updatedUser)
 	if err != nil || updatedUser.Id == 0 {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
@@ -625,7 +672,7 @@ func AdminClearUserBinding(c *gin.Context) {
 
 func UpdateSelf(c *gin.Context) {
 	var requestData map[string]interface{}
-	err := json.NewDecoder(c.Request.Body).Decode(&requestData)
+	err := common.DecodeJson(c.Request.Body, &requestData)
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
@@ -689,12 +736,12 @@ func UpdateSelf(c *gin.Context) {
 
 	// 原有的用户信息更新逻辑
 	var user model.User
-	requestDataBytes, err := json.Marshal(requestData)
+	requestDataBytes, err := common.Marshal(requestData)
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
 	}
-	err = json.Unmarshal(requestDataBytes, &user)
+	err = common.Unmarshal(requestDataBytes, &user)
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
@@ -745,7 +792,7 @@ func checkUpdatePassword(originalPassword string, newPassword string, userId int
 	// 密码不为空,需要验证原密码
 	// 支持第一次账号绑定时原密码为空的情况
 	if !common.ValidatePasswordAndHash(originalPassword, currentUser.Password) && currentUser.Password != "" {
-		err = fmt.Errorf("原密码错误")
+		err = fmt.Errorf("The original password is wrong")
 		return
 	}
 	if newPassword == "" {
@@ -773,12 +820,16 @@ func DeleteUser(c *gin.Context) {
 	}
 	err = model.HardDeleteUserById(id)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "",
-		})
+		common.ApiError(c, err)
 		return
 	}
+	if err := model.InvalidateUserTokensCache(id); err != nil {
+		common.SysLog(fmt.Sprintf("failed to invalidate tokens cache for user %d: %s", id, err.Error()))
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+	})
 }
 
 func DeleteSelf(c *gin.Context) {
@@ -804,7 +855,7 @@ func DeleteSelf(c *gin.Context) {
 
 func CreateUser(c *gin.Context) {
 	var user model.User
-	err := json.NewDecoder(c.Request.Body).Decode(&user)
+	err := common.DecodeJson(c.Request.Body, &user)
 	user.Username = strings.TrimSpace(user.Username)
 	if err != nil || user.Username == "" || user.Password == "" {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
@@ -851,7 +902,7 @@ type ManageRequest struct {
 // ManageUser Only admin user can do this
 func ManageUser(c *gin.Context) {
 	var req ManageRequest
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	err := common.DecodeJson(c.Request.Body, &req)
 
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
@@ -935,7 +986,7 @@ func ManageUser(c *gin.Context) {
 				return
 			}
 			model.RecordLogWithAdminInfo(user.Id, model.LogTypeManage,
-				fmt.Sprintf("管理员增加用户额度 %s", logger.LogQuota(req.Value)), adminInfo)
+				fmt.Sprintf("Administrator increases user quota %s", logger.LogQuota(req.Value)), adminInfo)
 		case "subtract":
 			if req.Value <= 0 {
 				common.ApiErrorI18n(c, i18n.MsgUserQuotaChangeZero)
@@ -946,7 +997,7 @@ func ManageUser(c *gin.Context) {
 				return
 			}
 			model.RecordLogWithAdminInfo(user.Id, model.LogTypeManage,
-				fmt.Sprintf("管理员减少用户额度 %s", logger.LogQuota(req.Value)), adminInfo)
+				fmt.Sprintf("Administrator reduces user quota %s", logger.LogQuota(req.Value)), adminInfo)
 		case "override":
 			oldQuota := user.Quota
 			if err := model.DB.Model(&model.User{}).Where("id = ?", user.Id).Update("quota", req.Value).Error; err != nil {
@@ -954,7 +1005,7 @@ func ManageUser(c *gin.Context) {
 				return
 			}
 			model.RecordLogWithAdminInfo(user.Id, model.LogTypeManage,
-				fmt.Sprintf("管理员覆盖用户额度从 %s 为 %s", logger.LogQuota(oldQuota), logger.LogQuota(req.Value)), adminInfo)
+				fmt.Sprintf("The administrator covers the user quota from %s to %s", logger.LogQuota(oldQuota), logger.LogQuota(req.Value)), adminInfo)
 		default:
 			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 			return
@@ -1089,7 +1140,7 @@ func TopUp(c *gin.Context) {
 	}
 	defer lock.Unlock()
 	req := topUpRequest{}
-	err := c.ShouldBindJSON(&req)
+	err := common.DecodeJson(c.Request.Body, &req)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -1127,7 +1178,7 @@ type UpdateUserSettingRequest struct {
 
 func UpdateUserSetting(c *gin.Context) {
 	var req UpdateUserSettingRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := common.DecodeJson(c.Request.Body, &req); err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
 	}

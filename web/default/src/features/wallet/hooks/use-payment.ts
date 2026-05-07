@@ -3,17 +3,21 @@ import i18next from 'i18next'
 import { toast } from 'sonner'
 import {
   calculateAmount,
+  calculateNowPaymentsAmount,
   calculateStripeAmount,
   calculateWaffoPancakeAmount,
   requestPayment,
+  requestNowPaymentsPayment,
   requestStripePayment,
   isApiSuccess,
 } from '../api'
 import {
   isStripePayment,
+  isNowPaymentsPayment,
   isWaffoPancakePayment,
   submitPaymentForm,
 } from '../lib'
+import type { ApiResponse } from '../types'
 
 // ============================================================================
 // Payment Hook
@@ -24,6 +28,16 @@ export function usePayment() {
   const [calculating, setCalculating] = useState(false)
   const [processing, setProcessing] = useState(false)
 
+  const getPaymentErrorMessage = useCallback((response: ApiResponse) => {
+    if (typeof response.data === 'string' && response.data.trim()) {
+      return response.data
+    }
+    if (response.message && response.message !== 'error') {
+      return response.message
+    }
+    return i18next.t('Payment request failed')
+  }, [])
+
   // Calculate payment amount
   const calculatePaymentAmount = useCallback(
     async (topupAmount: number, paymentType: string) => {
@@ -31,9 +45,12 @@ export function usePayment() {
         setCalculating(true)
 
         const isStripe = isStripePayment(paymentType)
+        const isNowPayments = isNowPaymentsPayment(paymentType)
         const isPancake = isWaffoPancakePayment(paymentType)
         const response = isStripe
           ? await calculateStripeAmount({ amount: topupAmount })
+          : isNowPayments
+            ? await calculateNowPaymentsAmount({ amount: topupAmount })
           : isPancake
             ? await calculateWaffoPancakeAmount({ amount: topupAmount })
             : await calculateAmount({ amount: topupAmount })
@@ -64,6 +81,7 @@ export function usePayment() {
         setProcessing(true)
 
         const isStripe = isStripePayment(paymentType)
+        const isNowPayments = isNowPaymentsPayment(paymentType)
         const amount = Math.floor(topupAmount)
 
         const response = isStripe
@@ -71,13 +89,18 @@ export function usePayment() {
               amount,
               payment_method: 'stripe',
             })
+          : isNowPayments
+            ? await requestNowPaymentsPayment({
+                amount,
+                payment_method: 'nowpayments',
+              })
           : await requestPayment({
               amount,
               payment_method: paymentType,
             })
 
         if (!isApiSuccess(response)) {
-          toast.error(response.message || i18next.t('Payment request failed'))
+          toast.error(getPaymentErrorMessage(response))
           return false
         }
 
@@ -88,8 +111,14 @@ export function usePayment() {
           return true
         }
 
+        if (isNowPayments && response.data?.invoice_url) {
+          window.open(response.data.invoice_url as string, '_blank')
+          toast.success(i18next.t('Redirecting to payment page...'))
+          return true
+        }
+
         // Handle non-Stripe payment
-        if (!isStripe && response.data) {
+        if (!isStripe && !isNowPayments && response.data) {
           const url = (response as unknown as { url?: string }).url
           if (url) {
             submitPaymentForm(url, response.data)
@@ -106,7 +135,7 @@ export function usePayment() {
         setProcessing(false)
       }
     },
-    []
+    [getPaymentErrorMessage]
   )
 
   return {

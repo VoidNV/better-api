@@ -44,6 +44,7 @@ func InitOptionMap() {
 	common.OptionMap["WeChatAuthEnabled"] = strconv.FormatBool(common.WeChatAuthEnabled)
 	common.OptionMap["TurnstileCheckEnabled"] = strconv.FormatBool(common.TurnstileCheckEnabled)
 	common.OptionMap["RegisterEnabled"] = strconv.FormatBool(common.RegisterEnabled)
+	common.OptionMap["InviteCodeRequired"] = strconv.FormatBool(common.InviteCodeRequired)
 	common.OptionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(common.AutomaticDisableChannelEnabled)
 	common.OptionMap["AutomaticEnableChannelEnabled"] = strconv.FormatBool(common.AutomaticEnableChannelEnabled)
 	common.OptionMap["LogConsumeEnabled"] = strconv.FormatBool(common.LogConsumeEnabled)
@@ -90,6 +91,13 @@ func InitOptionMap() {
 	common.OptionMap["CreemProducts"] = setting.CreemProducts
 	common.OptionMap["CreemTestMode"] = strconv.FormatBool(setting.CreemTestMode)
 	common.OptionMap["CreemWebhookSecret"] = setting.CreemWebhookSecret
+	common.OptionMap["NowPaymentsEnabled"] = strconv.FormatBool(setting.NowPaymentsEnabled)
+	common.OptionMap["NowPaymentsApiKey"] = setting.NowPaymentsApiKey
+	common.OptionMap["NowPaymentsIpnSecret"] = setting.NowPaymentsIpnSecret
+	common.OptionMap["NowPaymentsFixedRate"] = strconv.FormatBool(setting.NowPaymentsFixedRate)
+	common.OptionMap["NowPaymentsFeePaidByUser"] = strconv.FormatBool(setting.NowPaymentsFeePaidByUser)
+	common.OptionMap["NowPaymentsUnitPrice"] = strconv.FormatFloat(setting.NowPaymentsUnitPrice, 'f', -1, 64)
+	common.OptionMap["NowPaymentsMinTopUp"] = strconv.Itoa(setting.NowPaymentsMinTopUp)
 	common.OptionMap["WaffoEnabled"] = strconv.FormatBool(setting.WaffoEnabled)
 	common.OptionMap["WaffoApiKey"] = setting.WaffoApiKey
 	common.OptionMap["WaffoPrivateKey"] = setting.WaffoPrivateKey
@@ -246,7 +254,7 @@ func updateOptionMap(key string, value string) (err error) {
 			common.ImageDownloadPermission = intValue
 		}
 	}
-	if strings.HasSuffix(key, "Enabled") || key == "DefaultCollapseSidebar" || key == "DefaultUseAutoGroup" || key == "SMTPForceAuthLogin" {
+	if strings.HasSuffix(key, "Enabled") || key == "DefaultCollapseSidebar" || key == "DefaultUseAutoGroup" || key == "SMTPForceAuthLogin" || key == "InviteCodeRequired" {
 		boolValue := value == "true"
 		switch key {
 		case "PasswordRegisterEnabled":
@@ -267,6 +275,8 @@ func updateOptionMap(key string, value string) (err error) {
 			common.TurnstileCheckEnabled = boolValue
 		case "RegisterEnabled":
 			common.RegisterEnabled = boolValue
+		case "InviteCodeRequired":
+			common.InviteCodeRequired = boolValue
 		case "EmailDomainRestrictionEnabled":
 			common.EmailDomainRestrictionEnabled = boolValue
 		case "EmailAliasRestrictionEnabled":
@@ -389,6 +399,20 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.CreemTestMode = value == "true"
 	case "CreemWebhookSecret":
 		setting.CreemWebhookSecret = value
+	case "NowPaymentsEnabled":
+		setting.NowPaymentsEnabled = value == "true"
+	case "NowPaymentsApiKey":
+		setting.NowPaymentsApiKey = value
+	case "NowPaymentsIpnSecret":
+		setting.NowPaymentsIpnSecret = value
+	case "NowPaymentsFixedRate":
+		setting.NowPaymentsFixedRate = value == "true"
+	case "NowPaymentsFeePaidByUser":
+		setting.NowPaymentsFeePaidByUser = value == "true"
+	case "NowPaymentsUnitPrice":
+		setting.NowPaymentsUnitPrice, _ = strconv.ParseFloat(value, 64)
+	case "NowPaymentsMinTopUp":
+		setting.NowPaymentsMinTopUp, _ = strconv.Atoi(value)
 	case "WaffoEnabled":
 		setting.WaffoEnabled = value == "true"
 	case "WaffoApiKey":

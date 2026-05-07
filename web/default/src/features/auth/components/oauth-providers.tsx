@@ -17,6 +17,9 @@ type OAuthProvidersProps = {
   className?: string
   onWeChatLogin?: () => void
   isWeChatLoading?: boolean
+  inviteCode?: string
+  inviteCodeRequired?: boolean
+  onInviteCodeMissing?: () => void
 }
 
 type ProviderButton = {
@@ -33,8 +36,12 @@ export function OAuthProviders({
   className,
   onWeChatLogin,
   isWeChatLoading = false,
+  inviteCode,
+  inviteCodeRequired = false,
+  onInviteCodeMissing,
 }: OAuthProvidersProps) {
   const { t } = useTranslation()
+  const normalizedInviteCode = inviteCode?.trim()
   const {
     isLoading,
     githubButtonText,
@@ -45,7 +52,15 @@ export function OAuthProviders({
     handleLinuxDOLogin,
     handleTelegramLogin,
     handleCustomOAuthLogin,
-  } = useOAuthLogin(status)
+  } = useOAuthLogin(status, normalizedInviteCode)
+
+  const withInviteCode = (onClick: () => void) => () => {
+    if (inviteCodeRequired && !normalizedInviteCode) {
+      onInviteCodeMissing?.()
+      return
+    }
+    onClick()
+  }
 
   const providerButtons: ProviderButton[] = []
 
@@ -53,7 +68,7 @@ export function OAuthProviders({
     providerButtons.push({
       key: 'wechat',
       label: t('Continue with WeChat'),
-      onClick: onWeChatLogin,
+      onClick: withInviteCode(onWeChatLogin),
       icon: <IconWeChat className='h-4 w-4' />,
       disabled: isWeChatLoading,
     })
@@ -63,7 +78,7 @@ export function OAuthProviders({
     providerButtons.push({
       key: 'github',
       label: githubButtonText || t('Continue with GitHub'),
-      onClick: handleGitHubLogin,
+      onClick: withInviteCode(handleGitHubLogin),
       icon: <IconGithub className='h-4 w-4' />,
       disabled: githubButtonDisabled,
     })
@@ -73,7 +88,7 @@ export function OAuthProviders({
     providerButtons.push({
       key: 'discord',
       label: t('Continue with Discord'),
-      onClick: handleDiscordLogin,
+      onClick: withInviteCode(handleDiscordLogin),
       icon: <IconDiscord className='h-4 w-4' />,
     })
   }
@@ -82,7 +97,7 @@ export function OAuthProviders({
     providerButtons.push({
       key: 'oidc',
       label: t('Continue with OIDC'),
-      onClick: handleOIDCLogin,
+      onClick: withInviteCode(handleOIDCLogin),
     })
   }
 
@@ -90,7 +105,7 @@ export function OAuthProviders({
     providerButtons.push({
       key: 'linuxdo',
       label: t('Continue with LinuxDO'),
-      onClick: handleLinuxDOLogin,
+      onClick: withInviteCode(handleLinuxDOLogin),
       icon: <IconLinuxDo className='h-4 w-4' />,
     })
   }
@@ -99,7 +114,7 @@ export function OAuthProviders({
     providerButtons.push({
       key: 'telegram',
       label: t('Continue with Telegram'),
-      onClick: handleTelegramLogin,
+      onClick: withInviteCode(handleTelegramLogin),
     })
   }
 
@@ -110,7 +125,7 @@ export function OAuthProviders({
       providerButtons.push({
         key: `custom-${provider.slug}`,
         label: t('Continue with {{name}}', { name: provider.name }),
-        onClick: () => handleCustomOAuthLogin(provider),
+        onClick: withInviteCode(() => handleCustomOAuthLogin(provider)),
       })
     }
   }

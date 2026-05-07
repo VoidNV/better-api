@@ -36,6 +36,20 @@ func isCreemWebhookEnabled() bool {
 	return isCreemTopUpEnabled() && isCreemWebhookConfigured()
 }
 
+func isNowPaymentsTopUpEnabled() bool {
+	return setting.NowPaymentsEnabled &&
+		strings.TrimSpace(setting.NowPaymentsApiKey) != "" &&
+		strings.TrimSpace(setting.NowPaymentsIpnSecret) != ""
+}
+
+func isNowPaymentsWebhookConfigured() bool {
+	return strings.TrimSpace(setting.NowPaymentsIpnSecret) != ""
+}
+
+func isNowPaymentsWebhookEnabled() bool {
+	return isNowPaymentsWebhookConfigured()
+}
+
 func isWaffoTopUpEnabled() bool {
 	if !setting.WaffoEnabled {
 		return false

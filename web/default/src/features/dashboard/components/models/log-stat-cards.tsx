@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo } from 'react'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { formatNumber, formatQuota } from '@/lib/format'
 import { computeTimeRange } from '@/lib/time'
 import { useAuthStore } from '@/stores/auth-store'
@@ -24,57 +25,40 @@ export function LogStatCards(props: LogStatCardsProps) {
   const statCardsConfig = useModelStatCardsConfig()
   const user = useAuthStore((state) => state.auth.user)
   const isAdmin = !!(user?.role && user.role >= 10)
-  const [stats, setStats] = useState<{
-    totalQuota: number
-    totalCount: number
-    totalTokens: number
-  } | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-
-  const [timeRangeMinutes, setTimeRangeMinutes] = useState(0)
-
-  const { filters, onDataUpdate } = props
+  const timeRange = useMemo(
+    () =>
+      computeTimeRange(
+        getDefaultDays(props.filters?.time_granularity),
+        props.filters?.start_timestamp,
+        props.filters?.end_timestamp
+      ),
+    [
+      props.filters?.end_timestamp,
+      props.filters?.start_timestamp,
+      props.filters?.time_granularity,
+    ]
+  )
+  const queryParams = useMemo(
+    () => buildQueryParams(timeRange, props.filters),
+    [props.filters, timeRange]
+  )
+  const quotaQuery = useQuery({
+    queryKey: ['dashboard', 'quota-dates', isAdmin, queryParams],
+    queryFn: () => getUserQuotaDates(queryParams, isAdmin),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    gcTime: 5 * 60 * 1000,
+  })
+  const data = useMemo(() => quotaQuery.data?.data || [], [quotaQuery.data])
+  const stats = useMemo(() => calculateDashboardStats(data), [data])
+  const loading = !quotaQuery.data && quotaQuery.isLoading
+  const error = quotaQuery.isError && data.length === 0
+  const timeRangeMinutes =
+    (timeRange.end_timestamp - timeRange.start_timestamp) / 60
 
   useEffect(() => {
-    const abortController = new AbortController()
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true)
-
-    setError(false)
-    onDataUpdate?.([], true)
-
-    const timeRange = computeTimeRange(
-      getDefaultDays(filters?.time_granularity),
-      filters?.start_timestamp,
-      filters?.end_timestamp
-    )
-    const timeDiff = (timeRange.end_timestamp - timeRange.start_timestamp) / 60
-    setTimeRangeMinutes(timeDiff)
-
-    getUserQuotaDates(buildQueryParams(timeRange, filters), isAdmin)
-      .then((res) => {
-        if (abortController.signal.aborted) return
-        const data = res?.data || []
-        setStats(calculateDashboardStats(data))
-        onDataUpdate?.(data, false)
-      })
-      .catch(() => {
-        if (abortController.signal.aborted) return
-        setStats(null)
-        setError(true)
-        onDataUpdate?.([], false)
-      })
-      .finally(() => {
-        if (!abortController.signal.aborted) {
-          setLoading(false)
-        }
-      })
-
-    return () => {
-      abortController.abort()
-    }
-  }, [filters, isAdmin, onDataUpdate])
+    props.onDataUpdate?.(data, loading)
+  }, [data, loading, props.onDataUpdate])
 
   const adaptedStats = {
     rpm: stats?.totalCount ?? 0,

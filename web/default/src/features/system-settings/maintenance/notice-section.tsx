@@ -6,13 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { Textarea } from '@/components/ui/textarea'
+import { ContentBuilder } from '../components/content-builder'
 import { SettingsSection } from '../components/settings-section'
 import { useUpdateOption } from '../hooks/use-update-option'
 
@@ -66,15 +65,14 @@ export function NoticeSection({ defaultValue }: NoticeSectionProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t('Announcement content')}</FormLabel>
-                <FormControl>
-                  <Textarea
-                    rows={8}
-                    placeholder={t(
-                      'Planned maintenance on Friday at 22:00 UTC...'
-                    )}
-                    {...field}
-                  />
-                </FormControl>
+                <ContentBuilder
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  rows={10}
+                  placeholder={t(
+                    'Planned maintenance on Friday at 22:00 UTC...'
+                  )}
+                />
                 <FormMessage />
               </FormItem>
             )}

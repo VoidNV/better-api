@@ -1,8 +1,7 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowRight } from 'lucide-react'
+import { motion } from 'motion/react'
+import { ArrowUpRight, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useSystemConfig } from '@/hooks/use-system-config'
-import { Button } from '@/components/ui/button'
 import { HeroTerminalDemo } from '../hero-terminal-demo'
 
 interface HeroProps {
@@ -10,87 +9,147 @@ interface HeroProps {
   isAuthenticated?: boolean
 }
 
+const EASE = [0.16, 1, 0.3, 1] as const
+
 export function Hero(props: HeroProps) {
   const { t } = useTranslation()
-  const { systemName } = useSystemConfig()
 
   return (
-    <section className='relative z-10 flex flex-col items-center overflow-hidden px-6 pt-28 pb-16 md:pt-36 md:pb-24'>
-      {/* Radial gradient background */}
+    <section className='relative z-10 overflow-hidden px-6 pt-32 pb-20 md:pt-40 md:pb-28'>
+      {/* Ambient landing wash */}
       <div
         aria-hidden
-        className='pointer-events-none absolute inset-0 -z-10 opacity-25 dark:opacity-[0.12]'
+        className='pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] opacity-80 dark:opacity-60'
         style={{
-          background: [
-            'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.72 0.18 250 / 80%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.65 0.15 200 / 60%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.70 0.12 280 / 40%) 0%, transparent 70%)',
-          ].join(', '),
+          background:
+            'linear-gradient(180deg, color-mix(in srgb, var(--primary) 14%, transparent) 0%, transparent 72%)',
         }}
       />
-      {/* Grid pattern */}
       <div
         aria-hidden
-        className='absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_30%,black_20%,transparent_100%)] bg-[size:4rem_4rem] opacity-[0.08]'
+        className='landing-dot-grid pointer-events-none absolute inset-0 -z-20 opacity-35 dark:opacity-60 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_20%,black_20%,transparent_100%)]'
+      />
+      {/* Horizontal scan line */}
+      <div
+        aria-hidden
+        className='pointer-events-none absolute top-[85%] left-0 -z-10 h-px w-full bg-gradient-to-r from-transparent via-black/10 to-transparent dark:via-white/20'
       />
 
-      <div className='flex max-w-3xl flex-col items-center text-center'>
-        <h1
-          className='landing-animate-fade-up text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'
-          style={{ animationDelay: '0ms' }}
+      <div className='relative mx-auto flex max-w-5xl flex-col items-center text-center'>
+        {/* Announcement pill */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: EASE }}
+          className='mb-8'
         >
-          {t('Unified API Gateway for')}
-          <br />
-          <span className='bg-gradient-to-r from-blue-400 via-violet-400 to-purple-500 bg-clip-text text-transparent'>
-            {t('All Your AI Models')}
+          <Link
+            to='/pricing'
+            className='group inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-xs font-medium text-[#1d1d1f]/70 shadow-sm backdrop-blur-xl transition-all hover:border-black/15 hover:bg-white hover:text-[#1d1d1f] dark:border-white/10 dark:bg-white/[0.03] dark:text-white/70 dark:hover:border-white/20 dark:hover:bg-white/[0.06] dark:hover:text-white'
+          >
+            <span className='flex size-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' />
+            <span className='uppercase'>{t('Pricing')}</span>
+            <span className='h-3 w-px bg-black/10 dark:bg-white/10' />
+            <span>{t('Deposit $5, receive $25 in platform credit')}</span>
+            <ArrowUpRight className='size-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
+          </Link>
+        </motion.div>
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: EASE, delay: 0.1 }}
+          className='text-5xl leading-[1.02] font-semibold tracking-normal text-[#1d1d1f] md:text-7xl dark:text-white'
+        >
+          <span className='block'>{t('Unified AI access')}</span>
+          <span className='block text-[#6e6e73] dark:text-white/55'>
+            {t('for production teams.')}
           </span>
-        </h1>
-        <p
-          className='landing-animate-fade-up text-muted-foreground/80 mt-5 max-w-lg text-base leading-relaxed opacity-0 md:text-lg'
-          style={{ animationDelay: '80ms' }}
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: EASE, delay: 0.25 }}
+          className='mt-8 max-w-2xl text-base leading-8 text-[#424245] md:text-lg dark:text-white/65'
         >
-          {systemName}{' '}
           {t(
-            'is an open-source AI API gateway for self-hosted deployments. Connect multiple upstream services, manage models, keys, quotas, logs, and routing policies in one place.'
+            'Connect OpenAI, Claude, Gemini, DeepSeek, Qwen, and other supported providers through one API, with centralized billing and published pricing.'
           )}
-        </p>
-        <div
-          className='landing-animate-fade-up mt-8 flex items-center gap-3 opacity-0'
-          style={{ animationDelay: '160ms' }}
+        </motion.p>
+
+        {/* CTAs */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: EASE, delay: 0.4 }}
+          className='mt-10 flex flex-col items-center gap-3 sm:flex-row'
         >
           {props.isAuthenticated ? (
-            <Button className='group rounded-lg' asChild>
-              <Link to='/dashboard'>
-                {t('Go to Dashboard')}
-                <ArrowRight className='ml-1 size-3.5 transition-transform duration-200 group-hover:translate-x-0.5' />
-              </Link>
-            </Button>
+            <Link
+              to='/dashboard'
+              className='bg-primary text-primary-foreground group inline-flex h-11 items-center gap-2 rounded-lg px-6 text-sm font-medium shadow-sm transition-all hover:opacity-90 active:scale-[0.98]'
+            >
+              {t('Go to Dashboard')}
+              <ArrowUpRight className='size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
+            </Link>
           ) : (
             <>
-              <Button className='group rounded-lg' asChild>
-                <Link to='/sign-up'>
-                  {t('Get Started')}
-                  <ArrowRight className='ml-1 size-3.5 transition-transform duration-200 group-hover:translate-x-0.5' />
-                </Link>
-              </Button>
-              <Button
-                variant='outline'
-                className='border-border/50 hover:border-border hover:bg-muted/50 rounded-lg'
-                asChild
+              <Link
+                to='/sign-up'
+                className='bg-primary text-primary-foreground group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-lg px-6 text-sm font-medium shadow-sm transition-all hover:opacity-90 active:scale-[0.98]'
               >
-                <Link to='/pricing'>{t('View Pricing')}</Link>
-              </Button>
+                <Sparkles className='size-3.5' />
+                {t('Create workspace')}
+                <ArrowUpRight className='size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
+              </Link>
+              <Link
+                to='/pricing'
+                className='inline-flex h-11 items-center gap-2 rounded-lg border border-black/10 bg-white/70 px-6 text-sm font-medium text-[#1d1d1f]/80 shadow-sm backdrop-blur-xl transition-all hover:border-black/15 hover:bg-white hover:text-[#1d1d1f] active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.02] dark:text-white/80 dark:hover:border-white/20 dark:hover:bg-white/[0.06] dark:hover:text-white'
+              >
+                {t('View model pricing')}
+              </Link>
             </>
           )}
-        </div>
+        </motion.div>
+
+        {/* Social proof strip */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, ease: EASE, delay: 0.7 }}
+          className='mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[11px] text-[#6e6e73] uppercase dark:text-white/30'
+        >
+          <span>OpenAI</span>
+          <span className='h-1 w-1 rounded-full bg-black/15 dark:bg-white/15' />
+          <span>Anthropic</span>
+          <span className='h-1 w-1 rounded-full bg-black/15 dark:bg-white/15' />
+          <span>Google</span>
+          <span className='h-1 w-1 rounded-full bg-black/15 dark:bg-white/15' />
+          <span>Azure</span>
+          <span className='h-1 w-1 rounded-full bg-black/15 dark:bg-white/15' />
+          <span>Bedrock</span>
+          <span className='h-1 w-1 rounded-full bg-black/15 dark:bg-white/15' />
+          <span>DeepSeek</span>
+        </motion.div>
       </div>
 
-      <div
-        className='landing-animate-fade-up w-full opacity-0'
-        style={{ animationDelay: '300ms' }}
+      {/* Terminal demo */}
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 1, ease: EASE, delay: 0.55 }}
+        className='relative mt-20'
       >
+        {/* Glow behind terminal */}
+        <div
+          aria-hidden
+          className='pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-40 max-w-2xl bg-primary/10 blur-3xl'
+        />
         <HeroTerminalDemo />
-      </div>
+      </motion.div>
     </section>
   )
 }

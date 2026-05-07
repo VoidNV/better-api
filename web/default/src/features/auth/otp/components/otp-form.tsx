@@ -5,7 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
+import { useAuthStore, type AuthUser } from '@/stores/auth-store'
+import { markAuthSessionVerified } from '@/lib/auth-session'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -38,7 +39,6 @@ import {
   formatBackupCode,
   cleanBackupCode,
 } from '@/features/auth/lib/validation'
-import type { User } from '@/features/users/types'
 
 type OtpFormProps = React.HTMLAttributes<HTMLFormElement>
 
@@ -89,7 +89,8 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
       }
 
       // Update auth store
-      auth.setUser(userData as User)
+      auth.setUser(userData as AuthUser)
+      markAuthSessionVerified()
 
       // Store user ID in localStorage for compatibility
       if (userData.id) {

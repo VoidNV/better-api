@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
+import { resetAuthSessionVerified } from '@/lib/auth-session'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { logout } from '@/features/auth/api'
 
@@ -20,6 +21,7 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
       /* empty */
     }
     auth.reset()
+    resetAuthSessionVerified()
     try {
       if (typeof window !== 'undefined') {
         window.localStorage.removeItem('uid')

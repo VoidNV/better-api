@@ -63,52 +63,6 @@ export const DEFAULT_STATS = [
   },
 ] as const
 
-// Features section - Default features
-export const DEFAULT_FEATURES = [
-  {
-    title: 'Lightning Fast',
-    description:
-      'Optimized network architecture ensures millisecond response times',
-    iconName: 'Zap',
-  },
-  {
-    title: 'Secure & Reliable',
-    description:
-      'Enterprise-grade security with comprehensive permission management',
-    iconName: 'Shield',
-  },
-  {
-    title: 'Global Coverage',
-    description: 'Multi-region deployment for stable global access',
-    iconName: 'Globe',
-  },
-  {
-    title: 'Developer Friendly',
-    description: 'Compatible API routes for common AI application workflows',
-    iconName: 'Code',
-  },
-  {
-    title: 'High Performance',
-    description: 'Support for high concurrency with automatic load balancing',
-    iconName: 'Gauge',
-  },
-  {
-    title: 'Transparent Billing',
-    description: 'Pay-as-you-go with real-time usage monitoring',
-    iconName: 'DollarSign',
-  },
-  {
-    title: 'Team Collaboration',
-    description: 'Multi-user management with flexible permission allocation',
-    iconName: 'Users',
-  },
-  {
-    title: 'Open Source',
-    description: 'Community driven, self-hosted, and extensible',
-    iconName: 'HeartHandshake',
-  },
-] as const
-
 export function getGatewayFeatures(t: TFunction) {
   return GATEWAY_FEATURES.map((feature) => t(feature))
 }
@@ -117,13 +71,5 @@ export function getDefaultStats(t: TFunction) {
   return DEFAULT_STATS.map((stat) => ({
     ...stat,
     description: stat.description ? t(stat.description) : undefined,
-  }))
-}
-
-export function getDefaultFeatures(t: TFunction) {
-  return DEFAULT_FEATURES.map((feature) => ({
-    ...feature,
-    title: t(feature.title),
-    description: t(feature.description),
   }))
 }

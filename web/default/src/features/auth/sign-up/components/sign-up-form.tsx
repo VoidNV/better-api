@@ -74,13 +74,16 @@ export function SignUpForm({
     defaultValues: {
       username: '',
       email: '',
+      invite_code: '',
       password: '',
       confirmPassword: '',
     },
   })
 
   const emailValue = form.watch('email')
+  const inviteCodeValue = form.watch('invite_code')?.trim() ?? ''
   const emailVerificationRequired = !!status?.email_verification
+  const inviteCodeRequired = !!status?.invite_code_required
   const hasUserAgreement = Boolean(status?.user_agreement_enabled)
   const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
   const requiresLegalConsent = hasUserAgreement || hasPrivacyPolicy
@@ -129,6 +132,13 @@ export function SignUpForm({
         return
       }
     }
+    if (inviteCodeRequired && !data.invite_code?.trim()) {
+      toast.error(t('An invite code is required to register.'))
+      return
+    }
+    if (!validateTurnstile()) {
+      return
+    }
 
     setIsLoading(true)
     try {
@@ -137,6 +147,7 @@ export function SignUpForm({
         password: data.password,
         email: data.email || undefined,
         verification_code: verificationCode || undefined,
+        invite_code: inviteCodeRequired ? data.invite_code?.trim() : undefined,
         aff: getAffiliateCode(),
         turnstile: turnstileToken,
       })
@@ -144,6 +155,11 @@ export function SignUpForm({
       if (res?.success) {
         toast.success(t('Account created! Please sign in'))
         redirectToLogin()
+      } else if (inviteCodeRequired && res?.message) {
+        form.setError('invite_code', {
+          type: 'server',
+          message: res.message,
+        })
       }
     } catch (_error) {
       // Errors are handled by global interceptor
@@ -165,6 +181,15 @@ export function SignUpForm({
     setIsWeChatDialogOpen(true)
   }
 
+  const handleInviteCodeMissing = () => {
+    const message = t('An invite code is required to register.')
+    form.setError('invite_code', {
+      type: 'manual',
+      message,
+    })
+    toast.error(message)
+  }
+
   const handleWeChatDialogChange = (open: boolean) => {
     setIsWeChatDialogOpen(open)
     if (!open) {
@@ -178,10 +203,17 @@ export function SignUpForm({
       toast.error(t('Please enter the verification code'))
       return
     }
+    if (inviteCodeRequired && !inviteCodeValue) {
+      handleInviteCodeMissing()
+      return
+    }
 
     setIsWeChatSubmitting(true)
     try {
-      const res = await wechatLoginByCode(wechatCode)
+      const res = await wechatLoginByCode(
+        wechatCode,
+        inviteCodeRequired ? inviteCodeValue : undefined
+      )
       if (res?.success) {
         await handleLoginSuccess(res.data as { id?: number } | null)
         toast.success(t('Signed in via WeChat'))
@@ -300,16 +332,27 @@ export function SignUpForm({
               </Button>
             </div>
 
-            {/* Turnstile */}
-            {isTurnstileEnabled && (
-              <div className='mt-2'>
-                <Turnstile
-                  siteKey={turnstileSiteKey}
-                  onVerify={setTurnstileToken}
-                />
-              </div>
-            )}
           </>
+        )}
+
+        {inviteCodeRequired && (
+          <FormField
+            control={form.control}
+            name='invite_code'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Invite code')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('Enter your invite code')}
+                    autoComplete='off'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         )}
 
         <LegalConsent
@@ -318,6 +361,15 @@ export function SignUpForm({
           onCheckedChange={setAgreedToLegal}
           className='mt-1'
         />
+
+        {isTurnstileEnabled && (
+          <div className='mt-1'>
+            <Turnstile
+              siteKey={turnstileSiteKey}
+              onVerify={setTurnstileToken}
+            />
+          </div>
+        )}
 
         {/* Submit Button */}
         <Button
@@ -334,6 +386,9 @@ export function SignUpForm({
             disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
             onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
             isWeChatLoading={isWeChatSubmitting}
+            inviteCode={inviteCodeRequired ? inviteCodeValue : undefined}
+            inviteCodeRequired={inviteCodeRequired}
+            onInviteCodeMissing={handleInviteCodeMissing}
             className='pt-2'
           />
         )}
@@ -349,7 +404,7 @@ export function SignUpForm({
               <DialogTitle>{t('WeChat sign in')}</DialogTitle>
               <DialogDescription>
                 {t(
-                  'Scan the QR code to follow the official account and reply with “验证码” to receive your verification code.'
+                  'Scan the QR code to follow the official account and send "verification code" to receive your code.'
                 )}
               </DialogDescription>
             </DialogHeader>

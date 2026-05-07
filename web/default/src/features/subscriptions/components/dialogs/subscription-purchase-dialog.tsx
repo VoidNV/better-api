@@ -32,6 +32,19 @@ interface PaymentMethod {
   name?: string
 }
 
+function getPaymentErrorMessage(
+  res: { message?: string; data?: { pay_link?: string; checkout_url?: string } | string },
+  fallback: string
+) {
+  if (typeof res.data === 'string' && res.data.trim()) {
+    return res.data
+  }
+  if (res.message && res.message !== 'success' && res.message !== 'error') {
+    return res.message
+  }
+  return fallback
+}
+
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -80,11 +93,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
         toast.success(t('Payment page opened'))
         props.onOpenChange(false)
       } else {
-        toast.error(
-          res.message && res.message !== 'success'
-            ? res.message
-            : t('Payment request failed')
-        )
+        toast.error(getPaymentErrorMessage(res, t('Payment request failed')))
       }
     } catch {
       toast.error(t('Payment request failed'))
@@ -102,11 +111,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
         toast.success(t('Payment page opened'))
         props.onOpenChange(false)
       } else {
-        toast.error(
-          res.message && res.message !== 'success'
-            ? res.message
-            : t('Payment request failed')
-        )
+        toast.error(getPaymentErrorMessage(res, t('Payment request failed')))
       }
     } catch {
       toast.error(t('Payment request failed'))
@@ -150,11 +155,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
         toast.success(t('Payment initiated'))
         props.onOpenChange(false)
       } else {
-        toast.error(
-          res.message && res.message !== 'success'
-            ? res.message
-            : t('Payment request failed')
-        )
+        toast.error(getPaymentErrorMessage(res, t('Payment request failed')))
       }
     } catch {
       toast.error(t('Payment request failed'))

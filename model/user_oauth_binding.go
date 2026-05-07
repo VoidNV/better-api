@@ -39,14 +39,10 @@ func GetUserOAuthBinding(userId, providerId int) (*UserOAuthBinding, error) {
 
 // GetUserByOAuthBinding finds a user by provider ID and provider user ID
 func GetUserByOAuthBinding(providerId int, providerUserId string) (*User, error) {
-	var binding UserOAuthBinding
-	err := DB.Where("provider_id = ? AND provider_user_id = ?", providerId, providerUserId).First(&binding).Error
-	if err != nil {
-		return nil, err
-	}
-
 	var user User
-	err = DB.First(&user, binding.UserId).Error
+	err := DB.Joins("JOIN user_oauth_bindings ON user_oauth_bindings.user_id = users.id").
+		Where("user_oauth_bindings.provider_id = ? AND user_oauth_bindings.provider_user_id = ?", providerId, providerUserId).
+		First(&user).Error
 	if err != nil {
 		return nil, err
 	}

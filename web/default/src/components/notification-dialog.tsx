@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dialog'
 import { Markdown } from '@/components/ui/markdown'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface AnnouncementItem {
@@ -95,11 +94,26 @@ function AnnouncementDot({ type }: { type?: string }) {
   return (
     <span
       className={cn(
-        'mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full',
+        'inline-block size-2.5 shrink-0 rounded-full ring-4 ring-background',
         getAnnouncementColorClass(type)
       )}
     />
   )
+}
+
+function getAnnouncementTypeLabel(type: string | undefined, t: TFunction) {
+  switch (type) {
+    case 'ongoing':
+      return t('Ongoing')
+    case 'success':
+      return t('Success')
+    case 'warning':
+      return t('Warning')
+    case 'error':
+      return t('Error')
+    default:
+      return t('Update')
+  }
 }
 
 /**
@@ -162,7 +176,8 @@ function AnnouncementsContent({
 
   return (
     <ScrollArea className='h-[50vh] pr-4'>
-      <div className='space-y-0'>
+      <div className='relative space-y-4 pl-3'>
+        <div className='bg-border absolute top-5 bottom-5 left-[17px] w-px' />
         {announcements.map((item, idx) => {
           const publishDate = item.publishDate
             ? new Date(item.publishDate)
@@ -175,34 +190,37 @@ function AnnouncementsContent({
             : ''
 
           return (
-            <div key={idx}>
-              <div className='py-3'>
-                <div className='flex items-start gap-3'>
-                  <AnnouncementDot type={item.type} />
-                  <div className='min-w-0 flex-1 space-y-2'>
-                    {/* Content */}
-                    <div className='text-sm'>
-                      <Markdown>{item.content || ''}</Markdown>
-                    </div>
-
-                    {/* Extra info */}
-                    {item.extra && (
-                      <div className='text-muted-foreground text-xs'>
-                        <Markdown>{item.extra}</Markdown>
-                      </div>
-                    )}
-
-                    {/* Time */}
+            <div key={idx} className='relative pl-8'>
+              <div className='absolute top-5 left-0'>
+                <AnnouncementDot type={item.type} />
+              </div>
+              <div className='bg-card rounded-lg border p-4 shadow-xs'>
+                <div className='space-y-3'>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <span className='bg-muted rounded-full px-2 py-0.5 text-xs font-medium'>
+                      {getAnnouncementTypeLabel(item.type, t)}
+                    </span>
                     {absoluteTime && (
-                      <div className='text-muted-foreground text-xs'>
-                        {relativeTime && `${relativeTime} • `}
-                        {absoluteTime}
-                      </div>
+                      <span className='text-muted-foreground text-xs'>
+                        {relativeTime || absoluteTime}
+                      </span>
                     )}
                   </div>
+                  <div className='text-sm leading-6'>
+                    <Markdown>{item.content || ''}</Markdown>
+                  </div>
+                  {item.extra && (
+                    <div className='bg-muted/50 rounded-md px-3 py-2 text-xs'>
+                      <Markdown>{item.extra}</Markdown>
+                    </div>
+                  )}
+                  {absoluteTime && (
+                    <div className='text-muted-foreground text-xs'>
+                      {absoluteTime}
+                    </div>
+                  )}
                 </div>
               </div>
-              {idx < announcements.length - 1 && <Separator />}
             </div>
           )
         })}

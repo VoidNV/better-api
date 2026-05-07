@@ -52,6 +52,59 @@ func TestCreemWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 	require.False(t, isCreemWebhookEnabled())
 }
 
+func TestNowPaymentsWebhookEnabledRequiresIPNSecret(t *testing.T) {
+	originalEnabled := setting.NowPaymentsEnabled
+	originalAPIKey := setting.NowPaymentsApiKey
+	originalIPNSecret := setting.NowPaymentsIpnSecret
+	t.Cleanup(func() {
+		setting.NowPaymentsEnabled = originalEnabled
+		setting.NowPaymentsApiKey = originalAPIKey
+		setting.NowPaymentsIpnSecret = originalIPNSecret
+	})
+
+	setting.NowPaymentsEnabled = true
+	setting.NowPaymentsApiKey = "nowpayments_api_key"
+	setting.NowPaymentsIpnSecret = ""
+	require.False(t, isNowPaymentsWebhookEnabled())
+
+	setting.NowPaymentsIpnSecret = "nowpayments_ipn_secret"
+	require.True(t, isNowPaymentsWebhookEnabled())
+
+	setting.NowPaymentsEnabled = false
+	require.True(t, isNowPaymentsWebhookEnabled())
+
+	setting.NowPaymentsEnabled = true
+	setting.NowPaymentsApiKey = ""
+	require.True(t, isNowPaymentsWebhookEnabled())
+}
+
+func TestNowPaymentsTopUpEnabledRequiresToggleAPIKeyAndIPNSecret(t *testing.T) {
+	originalEnabled := setting.NowPaymentsEnabled
+	originalAPIKey := setting.NowPaymentsApiKey
+	originalIPNSecret := setting.NowPaymentsIpnSecret
+	t.Cleanup(func() {
+		setting.NowPaymentsEnabled = originalEnabled
+		setting.NowPaymentsApiKey = originalAPIKey
+		setting.NowPaymentsIpnSecret = originalIPNSecret
+	})
+
+	setting.NowPaymentsEnabled = true
+	setting.NowPaymentsApiKey = "nowpayments_api_key"
+	setting.NowPaymentsIpnSecret = "nowpayments_ipn_secret"
+	require.True(t, isNowPaymentsTopUpEnabled())
+
+	setting.NowPaymentsEnabled = false
+	require.False(t, isNowPaymentsTopUpEnabled())
+
+	setting.NowPaymentsEnabled = true
+	setting.NowPaymentsApiKey = ""
+	require.False(t, isNowPaymentsTopUpEnabled())
+
+	setting.NowPaymentsApiKey = "nowpayments_api_key"
+	setting.NowPaymentsIpnSecret = ""
+	require.False(t, isNowPaymentsTopUpEnabled())
+}
+
 func TestWaffoWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 	originalEnabled := setting.WaffoEnabled
 	originalSandbox := setting.WaffoSandbox

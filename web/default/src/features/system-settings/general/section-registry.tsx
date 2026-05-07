@@ -2,6 +2,7 @@ import type { GeneralSettings } from '../types'
 import { createSectionRegistry } from '../utils/section-registry'
 import { ChannelAffinitySection } from './channel-affinity'
 import { CheckinSettingsSection } from './checkin-settings-section'
+import { InviteCodeSettingsSection } from './invite-code-settings-section'
 import { PricingSection } from './pricing-section'
 import { QuotaSettingsSection } from './quota-settings-section'
 import { SystemBehaviorSection } from './system-behavior-section'
@@ -45,9 +46,13 @@ const GENERAL_SECTIONS = [
           QuotaForInviter: settings.QuotaForInviter,
           QuotaForInvitee: settings.QuotaForInvitee,
           TopUpLink: settings.TopUpLink,
-          'general_setting.docs_link': settings['general_setting.docs_link'],
-          'quota_setting.enable_free_model_pre_consume':
-            settings['quota_setting.enable_free_model_pre_consume'],
+          general_setting: {
+            docs_link: settings['general_setting.docs_link'],
+          },
+          quota_setting: {
+            enable_free_model_pre_consume:
+              settings['quota_setting.enable_free_model_pre_consume'],
+          },
         }}
       />
     ),
@@ -87,6 +92,18 @@ const GENERAL_SECTIONS = [
           enabled: settings['checkin_setting.enabled'],
           minQuota: settings['checkin_setting.min_quota'],
           maxQuota: settings['checkin_setting.max_quota'],
+        }}
+      />
+    ),
+  },
+  {
+    id: 'invite-codes',
+    titleKey: 'Invite Codes',
+    descriptionKey: 'Configure invite-only registration',
+    build: (settings: GeneralSettings) => (
+      <InviteCodeSettingsSection
+        defaultValues={{
+          InviteCodeRequired: settings.InviteCodeRequired,
         }}
       />
     ),

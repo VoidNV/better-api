@@ -87,7 +87,11 @@ const paymentSchema = z.object({
   }),
   StripeApiSecret: z.string(),
   StripeWebhookSecret: z.string(),
-  StripePriceId: z.string(),
+  StripePriceId: z.string().refine((value) => {
+    const trimmed = value.trim()
+    if (!trimmed) return true
+    return trimmed.startsWith('price_')
+  }, 'Use a Stripe Price ID starting with price_. Product IDs starting with prod_ will not work'),
   StripeUnitPrice: z.coerce.number().min(0),
   StripeMinTopUp: z.coerce.number().min(0),
   StripePromotionCodesEnabled: z.boolean(),
@@ -103,6 +107,13 @@ const paymentSchema = z.object({
       })
     }
   }),
+  NowPaymentsEnabled: z.boolean(),
+  NowPaymentsApiKey: z.string(),
+  NowPaymentsIpnSecret: z.string(),
+  NowPaymentsFixedRate: z.boolean(),
+  NowPaymentsFeePaidByUser: z.boolean(),
+  NowPaymentsUnitPrice: z.coerce.number().min(0),
+  NowPaymentsMinTopUp: z.coerce.number().int().min(0),
 })
 
 type PaymentFormValues = z.infer<typeof paymentSchema>
@@ -397,6 +408,96 @@ export function PaymentSettingsSection({
     }
   }
 
+  const saveNowPaymentsSettings = async () => {
+    const values = form.getValues()
+    const sanitized = {
+      NowPaymentsEnabled: values.NowPaymentsEnabled as boolean,
+      NowPaymentsApiKey: values.NowPaymentsApiKey.trim(),
+      NowPaymentsIpnSecret: values.NowPaymentsIpnSecret.trim(),
+      NowPaymentsFixedRate: values.NowPaymentsFixedRate as boolean,
+      NowPaymentsFeePaidByUser: values.NowPaymentsFeePaidByUser as boolean,
+      NowPaymentsUnitPrice: values.NowPaymentsUnitPrice as number,
+      NowPaymentsMinTopUp: values.NowPaymentsMinTopUp as number,
+    }
+
+    const initial = {
+      NowPaymentsEnabled: initialRef.current.NowPaymentsEnabled,
+      NowPaymentsApiKey: initialRef.current.NowPaymentsApiKey.trim(),
+      NowPaymentsIpnSecret: initialRef.current.NowPaymentsIpnSecret.trim(),
+      NowPaymentsFixedRate: initialRef.current.NowPaymentsFixedRate,
+      NowPaymentsFeePaidByUser: initialRef.current.NowPaymentsFeePaidByUser,
+      NowPaymentsUnitPrice: initialRef.current.NowPaymentsUnitPrice,
+      NowPaymentsMinTopUp: initialRef.current.NowPaymentsMinTopUp,
+    }
+
+    const updates: Array<{ key: string; value: string | number | boolean }> = []
+
+    if (sanitized.NowPaymentsEnabled !== initial.NowPaymentsEnabled) {
+      updates.push({
+        key: 'NowPaymentsEnabled',
+        value: sanitized.NowPaymentsEnabled,
+      })
+    }
+
+    if (
+      sanitized.NowPaymentsApiKey &&
+      sanitized.NowPaymentsApiKey !== initial.NowPaymentsApiKey
+    ) {
+      updates.push({
+        key: 'NowPaymentsApiKey',
+        value: sanitized.NowPaymentsApiKey,
+      })
+    }
+
+    if (
+      sanitized.NowPaymentsIpnSecret &&
+      sanitized.NowPaymentsIpnSecret !== initial.NowPaymentsIpnSecret
+    ) {
+      updates.push({
+        key: 'NowPaymentsIpnSecret',
+        value: sanitized.NowPaymentsIpnSecret,
+      })
+    }
+
+    if (sanitized.NowPaymentsFixedRate !== initial.NowPaymentsFixedRate) {
+      updates.push({
+        key: 'NowPaymentsFixedRate',
+        value: sanitized.NowPaymentsFixedRate,
+      })
+    }
+
+    if (
+      sanitized.NowPaymentsFeePaidByUser !== initial.NowPaymentsFeePaidByUser
+    ) {
+      updates.push({
+        key: 'NowPaymentsFeePaidByUser',
+        value: sanitized.NowPaymentsFeePaidByUser,
+      })
+    }
+
+    if (sanitized.NowPaymentsUnitPrice !== initial.NowPaymentsUnitPrice) {
+      updates.push({
+        key: 'NowPaymentsUnitPrice',
+        value: sanitized.NowPaymentsUnitPrice,
+      })
+    }
+
+    if (sanitized.NowPaymentsMinTopUp !== initial.NowPaymentsMinTopUp) {
+      updates.push({
+        key: 'NowPaymentsMinTopUp',
+        value: sanitized.NowPaymentsMinTopUp,
+      })
+    }
+
+    if (updates.length === 0) {
+      return
+    }
+
+    for (const update of updates) {
+      await updateOption.mutateAsync(update)
+    }
+  }
+
   const onSubmit = async (values: PaymentFormValues) => {
     const sanitized = {
       PayAddress: removeTrailingSlash(values.PayAddress),
@@ -414,6 +515,13 @@ export function PaymentSettingsSection({
       StripeUnitPrice: values.StripeUnitPrice,
       StripeMinTopUp: values.StripeMinTopUp,
       StripePromotionCodesEnabled: values.StripePromotionCodesEnabled,
+      NowPaymentsEnabled: values.NowPaymentsEnabled,
+      NowPaymentsApiKey: values.NowPaymentsApiKey.trim(),
+      NowPaymentsIpnSecret: values.NowPaymentsIpnSecret.trim(),
+      NowPaymentsFixedRate: values.NowPaymentsFixedRate,
+      NowPaymentsFeePaidByUser: values.NowPaymentsFeePaidByUser,
+      NowPaymentsUnitPrice: values.NowPaymentsUnitPrice,
+      NowPaymentsMinTopUp: values.NowPaymentsMinTopUp,
     }
 
     const initial = {
@@ -435,6 +543,14 @@ export function PaymentSettingsSection({
       StripeMinTopUp: initialRef.current.StripeMinTopUp,
       StripePromotionCodesEnabled:
         initialRef.current.StripePromotionCodesEnabled,
+      NowPaymentsEnabled: initialRef.current.NowPaymentsEnabled,
+      NowPaymentsApiKey: initialRef.current.NowPaymentsApiKey.trim(),
+      NowPaymentsIpnSecret: initialRef.current.NowPaymentsIpnSecret.trim(),
+      NowPaymentsFixedRate: initialRef.current.NowPaymentsFixedRate,
+      NowPaymentsFeePaidByUser:
+        initialRef.current.NowPaymentsFeePaidByUser,
+      NowPaymentsUnitPrice: initialRef.current.NowPaymentsUnitPrice,
+      NowPaymentsMinTopUp: initialRef.current.NowPaymentsMinTopUp,
     }
 
     const updates: Array<{ key: string; value: string | number | boolean }> = []
@@ -532,6 +648,63 @@ export function PaymentSettingsSection({
       })
     }
 
+    if (sanitized.NowPaymentsEnabled !== initial.NowPaymentsEnabled) {
+      updates.push({
+        key: 'NowPaymentsEnabled',
+        value: sanitized.NowPaymentsEnabled,
+      })
+    }
+
+    if (
+      sanitized.NowPaymentsApiKey &&
+      sanitized.NowPaymentsApiKey !== initial.NowPaymentsApiKey
+    ) {
+      updates.push({
+        key: 'NowPaymentsApiKey',
+        value: sanitized.NowPaymentsApiKey,
+      })
+    }
+
+    if (
+      sanitized.NowPaymentsIpnSecret &&
+      sanitized.NowPaymentsIpnSecret !== initial.NowPaymentsIpnSecret
+    ) {
+      updates.push({
+        key: 'NowPaymentsIpnSecret',
+        value: sanitized.NowPaymentsIpnSecret,
+      })
+    }
+
+    if (sanitized.NowPaymentsFixedRate !== initial.NowPaymentsFixedRate) {
+      updates.push({
+        key: 'NowPaymentsFixedRate',
+        value: sanitized.NowPaymentsFixedRate,
+      })
+    }
+
+    if (
+      sanitized.NowPaymentsFeePaidByUser !== initial.NowPaymentsFeePaidByUser
+    ) {
+      updates.push({
+        key: 'NowPaymentsFeePaidByUser',
+        value: sanitized.NowPaymentsFeePaidByUser,
+      })
+    }
+
+    if (sanitized.NowPaymentsUnitPrice !== initial.NowPaymentsUnitPrice) {
+      updates.push({
+        key: 'NowPaymentsUnitPrice',
+        value: sanitized.NowPaymentsUnitPrice,
+      })
+    }
+
+    if (sanitized.NowPaymentsMinTopUp !== initial.NowPaymentsMinTopUp) {
+      updates.push({
+        key: 'NowPaymentsMinTopUp',
+        value: sanitized.NowPaymentsMinTopUp,
+      })
+    }
+
     for (const update of updates) {
       await updateOption.mutateAsync(update)
     }
@@ -569,7 +742,7 @@ export function PaymentSettingsSection({
                     <FormControl>
                       <Input
                         type='number'
-                        step='0.01'
+                        step='1'
                         min={0}
                         value={(field.value ?? 0) as number}
                         onChange={(event) =>
@@ -798,6 +971,219 @@ export function PaymentSettingsSection({
 
           <div className='space-y-4'>
             <div>
+              <h3 className='text-lg font-medium'>
+                {t('Crypto Gateway')}
+              </h3>
+              <p className='text-muted-foreground text-sm'>
+                {t('Configuration for NOWPayments stablecoin checkout')}
+              </p>
+            </div>
+
+            <div className='rounded-md bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-100'>
+              <p className='mb-2 font-medium'>{t('Webhook Configuration:')}</p>
+              <ul className='list-inside list-disc space-y-1'>
+                <li>
+                  {t('Webhook URL:')}{' '}
+                  <code className='rounded bg-blue-100 px-1 py-0.5 text-xs dark:bg-blue-900'>
+                    {'<ServerAddress>/api/nowpayments/webhook'}
+                  </code>
+                </li>
+                <li>{t('Configure IPN in your NOWPayments dashboard')}</li>
+              </ul>
+            </div>
+
+            <FormField
+              control={form.control}
+              name='NowPaymentsEnabled'
+              render={({ field }) => (
+                <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+                  <div className='space-y-0.5'>
+                    <FormLabel className='text-base'>
+                      {t('Enable crypto checkout')}
+                    </FormLabel>
+                    <FormDescription>
+                      {t('Show Crypto as a wallet top-up payment method')}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <div className='grid gap-6 md:grid-cols-2'>
+              <FormField
+                control={form.control}
+                name='NowPaymentsApiKey'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('API Key')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='password'
+                        placeholder={t('Enter NOWPayments API key')}
+                        autoComplete='new-password'
+                        {...field}
+                        onChange={(event) => field.onChange(event.target.value)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('NOWPayments API key (leave blank unless updating)')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='NowPaymentsIpnSecret'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('IPN secret')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='password'
+                        placeholder={t('Enter IPN secret')}
+                        autoComplete='new-password'
+                        {...field}
+                        onChange={(event) => field.onChange(event.target.value)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('NOWPayments IPN secret (leave blank unless updating)')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className='grid gap-6 md:grid-cols-2'>
+              <FormField
+                control={form.control}
+                name='NowPaymentsUnitPrice'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t('Unit price (local currency / USD)')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        step='0.01'
+                        min={0}
+                        value={(field.value ?? 0) as number}
+                        onChange={(event) =>
+                          field.onChange(event.target.valueAsNumber)
+                        }
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('e.g., 1 means 1 USD per wallet credit unit')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='NowPaymentsMinTopUp'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Minimum top-up (USD)')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        step='0.01'
+                        min={0}
+                        value={(field.value ?? 0) as number}
+                        onChange={(event) =>
+                          field.onChange(event.target.valueAsNumber)
+                        }
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('Minimum crypto checkout amount in USD')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className='grid gap-6 md:grid-cols-2'>
+              <FormField
+                control={form.control}
+                name='NowPaymentsFixedRate'
+                render={({ field }) => (
+                  <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+                    <div className='space-y-0.5'>
+                      <FormLabel className='text-base'>
+                        {t('Fixed rate invoices')}
+                      </FormLabel>
+                      <FormDescription>
+                        {t('Reduce crypto price movement during checkout')}
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='NowPaymentsFeePaidByUser'
+                render={({ field }) => (
+                  <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+                    <div className='space-y-0.5'>
+                      <FormLabel className='text-base'>
+                        {t('User pays network fees')}
+                      </FormLabel>
+                      <FormDescription>
+                        {t('Pass NOWPayments checkout fees to the payer')}
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Button
+              type='button'
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                saveNowPaymentsSettings()
+              }}
+              disabled={updateOption.isPending}
+            >
+              {updateOption.isPending
+                ? t('Saving...')
+                : t('Save crypto settings')}
+            </Button>
+          </div>
+
+          <Separator />
+
+          <div className='space-y-4'>
+            <div>
               <h3 className='text-lg font-medium'>{t('Epay Gateway')}</h3>
               <p className='text-muted-foreground text-sm'>
                 {t('Configuration for Epay payment integration')}
@@ -1015,7 +1401,9 @@ export function PaymentSettingsSection({
                       />
                     </FormControl>
                     <FormDescription>
-                      {t('Stripe product price ID')}
+                      {t(
+                        'Use a Stripe Price ID starting with price_. Product IDs starting with prod_ will not work'
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

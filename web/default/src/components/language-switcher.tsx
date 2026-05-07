@@ -1,66 +1,35 @@
-import { useCallback } from 'react'
-import { Languages, Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useAuthStore } from '@/stores/auth-store'
-import { api } from '@/lib/api'
-import { cn } from '@/lib/utils'
+import { Languages } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-
-const languages = [
-  { code: 'en', label: 'English' },
-  { code: 'zh', label: '中文' },
-  { code: 'fr', label: 'Français' },
-  { code: 'ru', label: 'Русский' },
-  { code: 'ja', label: '日本語' },
-  { code: 'vi', label: 'Tiếng Việt' },
-]
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 export function LanguageSwitcher() {
-  const { i18n, t } = useTranslation()
-  const user = useAuthStore((s) => s.auth.user)
-
-  const handleChangeLanguage = useCallback(
-    async (code: string) => {
-      await i18n.changeLanguage(code)
-      if (user) {
-        try {
-          await api.put('/api/user/self', { language: code })
-        } catch {
-          // Best-effort persistence; don't block the UI on failure
-        }
-      }
-    },
-    [i18n, user]
-  )
+  const { t } = useTranslation()
 
   return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button variant='ghost' size='icon' className='h-9 w-9 rounded-full'>
-          <Languages className='size-[1.2rem]' />
-          <span className='sr-only'>{t('Change language')}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='end'>
-        {languages.map((lang) => (
-          <DropdownMenuItem
-            key={lang.code}
-            onClick={() => handleChangeLanguage(lang.code)}
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant='ghost'
+            size='icon'
+            disabled
+            className='h-9 w-9 rounded-full opacity-60'
+            aria-label={t('Language')}
           >
-            {lang.label}
-            <Check
-              size={14}
-              className={cn('ms-auto', i18n.language !== lang.code && 'hidden')}
-            />
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <Languages className='size-[1.2rem]' />
+            <span className='sr-only'>{t('Language')}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side='bottom' className='text-xs'>
+          {t('English (only language available)')}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }

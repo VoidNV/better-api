@@ -33,6 +33,14 @@ const INTEGRATIONS_SECTIONS = [
           CreemWebhookSecret: settings.CreemWebhookSecret,
           CreemTestMode: settings.CreemTestMode,
           CreemProducts: settings.CreemProducts,
+          NowPaymentsEnabled: settings.NowPaymentsEnabled ?? false,
+          NowPaymentsApiKey: settings.NowPaymentsApiKey ?? '',
+          NowPaymentsIpnSecret: settings.NowPaymentsIpnSecret ?? '',
+          NowPaymentsFixedRate: settings.NowPaymentsFixedRate ?? true,
+          NowPaymentsFeePaidByUser:
+            settings.NowPaymentsFeePaidByUser ?? true,
+          NowPaymentsUnitPrice: settings.NowPaymentsUnitPrice ?? 1,
+          NowPaymentsMinTopUp: settings.NowPaymentsMinTopUp ?? 1,
         }}
         waffoDefaultValues={{
           WaffoEnabled: settings.WaffoEnabled ?? false,

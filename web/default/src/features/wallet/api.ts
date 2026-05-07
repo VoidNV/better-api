@@ -10,6 +10,7 @@ import type {
   AmountResponse,
   PaymentResponse,
   StripePaymentResponse,
+  NowPaymentsPaymentResponse,
   AffiliateCodeResponse,
   AffiliateTransferResponse,
   BillingHistoryResponse,
@@ -75,6 +76,15 @@ export async function calculateStripeAmount(
   return res.data
 }
 
+export async function calculateNowPaymentsAmount(
+  request: AmountRequest
+): Promise<AmountResponse> {
+  const res = await api.post('/api/user/nowpayments/amount', request, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  return res.data
+}
+
 /**
  * Request regular payment
  */
@@ -97,6 +107,15 @@ export async function requestStripePayment(
   request: PaymentRequest
 ): Promise<StripePaymentResponse> {
   const res = await api.post('/api/user/stripe/pay', request, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  return res.data
+}
+
+export async function requestNowPaymentsPayment(
+  request: PaymentRequest
+): Promise<NowPaymentsPaymentResponse> {
+  const res = await api.post('/api/user/nowpayments/pay', request, {
     skipBusinessError: true,
   } as Record<string, unknown>)
   return res.data

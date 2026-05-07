@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
+import { ContentBuilder } from '../components/content-builder'
 import { FormDirtyIndicator } from '../components/form-dirty-indicator'
 import { FormNavigationGuard } from '../components/form-navigation-guard'
 import { SettingsSection } from '../components/settings-section'
@@ -167,15 +167,14 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('Notice')}</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t(
-                        'Enter announcement content (supports Markdown & HTML)'
-                      )}
-                      rows={6}
-                      {...field}
-                    />
-                  </FormControl>
+                  <ContentBuilder
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    placeholder={t(
+                      'Enter announcement content (supports Markdown & HTML)'
+                    )}
+                    rows={6}
+                  />
                   <FormDescription>
                     {t(
                       'Announcement displayed to users (supports Markdown & HTML)'
@@ -248,14 +247,12 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('Footer')}</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t(
-                        '© 2025 Your Company. All rights reserved.'
-                      )}
-                      {...field}
-                    />
-                  </FormControl>
+                  <ContentBuilder
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    placeholder={t('© 2025 Your Company. All rights reserved.')}
+                    rows={4}
+                  />
                   <FormDescription>
                     {t('Footer text displayed at the bottom of pages')}
                   </FormDescription>
@@ -270,15 +267,14 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('About')}</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t(
-                        'Enter HTML code (e.g., <p>About us...</p>) or a URL (e.g., https://example.com) to embed as iframe'
-                      )}
-                      rows={4}
-                      {...field}
-                    />
-                  </FormControl>
+                  <ContentBuilder
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    placeholder={t(
+                      'Enter HTML code (e.g., <p>About us...</p>) or a URL (e.g., https://example.com) to embed as iframe'
+                    )}
+                    rows={8}
+                  />
                   <FormDescription>
                     {t(
                       'Supports HTML markup or iframe embedding. Enter HTML code directly, or provide a complete URL to automatically embed it as an iframe.'
@@ -295,13 +291,12 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('Home Page Content')}</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t('Welcome to our New API...')}
-                      rows={6}
-                      {...field}
-                    />
-                  </FormControl>
+                  <ContentBuilder
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    placeholder={t('Welcome to our New API...')}
+                    rows={10}
+                  />
                   <FormDescription>
                     {t(
                       'Content displayed on the home page (supports Markdown)'
@@ -318,15 +313,14 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('User Agreement')}</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t(
-                        'Provide Markdown, HTML, or an external URL for the user agreement'
-                      )}
-                      rows={6}
-                      {...field}
-                    />
-                  </FormControl>
+                  <ContentBuilder
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    placeholder={t(
+                      'Provide Markdown, HTML, or an external URL for the user agreement'
+                    )}
+                    rows={12}
+                  />
                   <FormDescription>
                     {t(
                       'Leave empty to disable the agreement requirement. Supports Markdown, HTML, or a full URL to redirect users.'
@@ -343,15 +337,14 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('Privacy Policy')}</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t(
-                        'Provide Markdown, HTML, or an external URL for the privacy policy'
-                      )}
-                      rows={6}
-                      {...field}
-                    />
-                  </FormControl>
+                  <ContentBuilder
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    placeholder={t(
+                      'Provide Markdown, HTML, or an external URL for the privacy policy'
+                    )}
+                    rows={12}
+                  />
                   <FormDescription>
                     {t(
                       'Leave empty to disable the privacy policy requirement. Supports Markdown, HTML, or a full URL to redirect users.'

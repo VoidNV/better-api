@@ -44,7 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Textarea } from '@/components/ui/textarea'
+import { ContentBuilder } from '../components/content-builder'
 import { SettingsSection } from '../components/settings-section'
 import { useUpdateOption } from '../hooks/use-update-option'
 
@@ -375,15 +375,14 @@ export function FAQSection({ enabled, data }: FAQSectionProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('Answer')}</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder={t(
-                          'Visit Settings → General and adjust quota options...'
-                        )}
-                        rows={8}
-                        {...field}
-                      />
-                    </FormControl>
+                    <ContentBuilder
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      placeholder={t(
+                        'Visit Settings -> General and adjust quota options...'
+                      )}
+                      rows={8}
+                    />
                     <FormDescription>
                       {t(
                         'Maximum 1000 characters. Supports Markdown and HTML.'

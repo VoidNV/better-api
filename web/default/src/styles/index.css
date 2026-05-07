@@ -2,6 +2,7 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/public-sans';
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 @import './theme.css';
 
@@ -519,6 +520,211 @@
 .content-auto {
   content-visibility: auto;
   contain-intrinsic-size: 0 80px;
+}
+
+/* Landing page surface overrides */
+html.landing-active:not(.dark) {
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
+  --card: #ffffff;
+  --popover: #ffffff;
+  --secondary: #ffffff;
+  --muted: #ececf0;
+  --accent: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+  --input: rgba(0, 0, 0, 0.12);
+  --sidebar: #f5f5f7;
+  --sidebar-border: rgba(0, 0, 0, 0.08);
+}
+
+html.landing-active.dark {
+  --background: #050506;
+  --card: #0a0a0a;
+  --popover: #0a0a0a;
+  --secondary: #111111;
+  --muted: #111111;
+  --accent: #111111;
+  --border: #1a1a1a;
+  --input: #1a1a1a;
+  --sidebar: #050506;
+  --sidebar-border: #1a1a1a;
+}
+
+/* Landing dot grid background */
+.landing-dot-grid {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--foreground) 10%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+html.landing-active:not(.dark) [class~='text-white'] {
+  color: #1d1d1f;
+}
+html.landing-active:not(.dark) [class~='text-white/80'] {
+  color: rgb(29 29 31 / 0.8);
+}
+html.landing-active:not(.dark) [class~='text-white/70'] {
+  color: rgb(29 29 31 / 0.7);
+}
+html.landing-active:not(.dark) [class~='text-white/60'] {
+  color: rgb(29 29 31 / 0.6);
+}
+html.landing-active:not(.dark) [class~='text-white/55'],
+html.landing-active:not(.dark) [class~='text-white/50'] {
+  color: rgb(66 66 69 / 0.82);
+}
+html.landing-active:not(.dark) [class~='text-white/45'],
+html.landing-active:not(.dark) [class~='text-white/40'],
+html.landing-active:not(.dark) [class~='text-white/30'],
+html.landing-active:not(.dark) [class~='text-white/25'] {
+  color: #6e6e73;
+}
+html.landing-active:not(.dark) [class*='border-white'] {
+  border-color: rgb(0 0 0 / 0.08);
+}
+html.landing-active:not(.dark) [class*='bg-white/'] {
+  background-color: rgb(255 255 255 / 0.72);
+}
+
+/* Landing card hover glow */
+.landing-card-glow {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.landing-card-glow:hover {
+  border-color: color-mix(in srgb, var(--foreground) 12%, transparent);
+  box-shadow: 0 18px 60px -32px color-mix(in srgb, var(--foreground) 24%, transparent);
+}
+
+/* Landing gradient text */
+.landing-gradient-text {
+  background: linear-gradient(180deg, #ffffff 0%, #888888 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Landing shimmer line animation */
+@keyframes landing-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.landing-shimmer-line {
+  position: relative;
+  overflow: hidden;
+}
+.landing-shimmer-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+  animation: landing-shimmer 3s ease-in-out infinite;
+}
+
+/* Landing glow orb */
+@keyframes landing-glow-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.05); }
+}
+.landing-glow-orb {
+  animation: landing-glow-pulse 4s ease-in-out infinite;
+}
+
+/* Landing number ticker */
+@keyframes landing-count-in {
+  from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.landing-count-in {
+  animation: landing-count-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Landing border sweep animation */
+@keyframes landing-border-sweep {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+.landing-border-sweep {
+  background: linear-gradient(90deg, #222 0%, #444 50%, #222 100%);
+  background-size: 200% 100%;
+  animation: landing-border-sweep 3s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-shimmer-line::after,
+  .landing-glow-orb,
+  .landing-count-in {
+    animation: none !important;
+  }
+}
+
+/* ── App-wide subtle surface texture for dark theme ── */
+.dark body {
+  background-image:
+    radial-gradient(
+      ellipse 80% 50% at 50% -20%,
+      rgba(59, 130, 246, 0.04) 0%,
+      transparent 70%
+    );
+  background-attachment: fixed;
+}
+
+/* Subtle card lift on dark */
+.dark [data-slot='card'] {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, transparent 100%),
+    var(--card);
+  border-color: var(--border);
+}
+
+/* Soften primary buttons to feel less heavy on the dark UI */
+.dark [data-slot='button'][data-variant='default'],
+.dark button[data-variant='default'] {
+  background: #f5f5f5;
+  color: #0a0a0a;
+}
+.dark [data-slot='button'][data-variant='default']:hover,
+.dark button[data-variant='default']:hover {
+  background: #ffffff;
+}
+
+/* Page-level fade-in for route transitions (gentle, never flashy) */
+@keyframes app-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+main,
+[data-slot='sidebar-inset'] > *:not([data-slot='header']) {
+  animation: app-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  main,
+  [data-slot='sidebar-inset'] > *:not([data-slot='header']) {
+    animation: none !important;
+  }
+}
+
+/* Dotted divider utility for dark-app sections */
+.dotted-divider {
+  background-image: linear-gradient(
+    to right,
+    var(--border) 50%,
+    transparent 50%
+  );
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  height: 1px;
+}
+
+/* Mono-accent label utility — for secondary callouts across the app */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
 /* ── Hero terminal demo animations ── */

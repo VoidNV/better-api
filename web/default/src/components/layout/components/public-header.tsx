@@ -38,7 +38,7 @@ export function PublicHeader(props: PublicHeaderProps) {
   const {
     navLinks = defaultTopNavLinks,
     showThemeSwitch = true,
-    showLanguageSwitcher = true,
+    showLanguageSwitcher = false,
     logo: customLogo,
     siteName: customSiteName,
     homeUrl = '/',

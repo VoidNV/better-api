@@ -52,9 +52,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Textarea } from '@/components/ui/textarea'
 import { DateTimePicker } from '@/components/datetime-picker'
 import { StatusBadge } from '@/components/status-badge'
+import { ContentBuilder } from '../components/content-builder'
 import { SettingsSection } from '../components/settings-section'
 import { useUpdateOption } from '../hooks/use-update-option'
 
@@ -467,15 +467,14 @@ export function AnnouncementsSection({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('Content')}</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder={t(
-                          'Enter announcement content (supports Markdown/HTML)'
-                        )}
-                        rows={4}
-                        {...field}
-                      />
-                    </FormControl>
+                    <ContentBuilder
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      placeholder={t(
+                        'Enter announcement content (supports Markdown/HTML)'
+                      )}
+                      rows={6}
+                    />
                     <FormDescription>
                       {t('Maximum 500 characters. Supports Markdown and HTML.')}
                     </FormDescription>

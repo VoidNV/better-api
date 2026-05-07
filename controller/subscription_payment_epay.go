@@ -12,7 +12,6 @@ import (
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
-	"github.com/QuantumNous/new-api/setting/system_setting"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
 )
@@ -25,7 +24,7 @@ type SubscriptionEpayPayRequest struct {
 func SubscriptionRequestEpay(c *gin.Context) {
 	var req SubscriptionEpayPayRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.PlanId <= 0 {
-		common.ApiErrorMsg(c, "参数错误")
+		common.ApiErrorMsg(c, "Parameter error")
 		return
 	}
 
@@ -35,15 +34,15 @@ func SubscriptionRequestEpay(c *gin.Context) {
 		return
 	}
 	if !plan.Enabled {
-		common.ApiErrorMsg(c, "套餐未启用")
+		common.ApiErrorMsg(c, "Package is not enabled")
 		return
 	}
 	if plan.PriceAmount < 0.01 {
-		common.ApiErrorMsg(c, "套餐金额过低")
+		common.ApiErrorMsg(c, "Package amount is too low")
 		return
 	}
 	if !operation_setting.ContainsPayMethod(req.PaymentMethod) {
-		common.ApiErrorMsg(c, "支付方式不存在")
+		common.ApiErrorMsg(c, "Payment method does not exist")
 		return
 	}
 
@@ -55,7 +54,7 @@ func SubscriptionRequestEpay(c *gin.Context) {
 			return
 		}
 		if count >= int64(plan.MaxPurchasePerUser) {
-			common.ApiErrorMsg(c, "已达到该套餐购买上限")
+			common.ApiErrorMsg(c, "The purchase limit for this package has been reached")
 			return
 		}
 	}
@@ -63,12 +62,12 @@ func SubscriptionRequestEpay(c *gin.Context) {
 	callBackAddress := service.GetCallbackAddress()
 	returnUrl, err := url.Parse(callBackAddress + "/api/subscription/epay/return")
 	if err != nil {
-		common.ApiErrorMsg(c, "回调地址配置错误")
+		common.ApiErrorMsg(c, "Callback address configuration error")
 		return
 	}
 	notifyUrl, err := url.Parse(callBackAddress + "/api/subscription/epay/notify")
 	if err != nil {
-		common.ApiErrorMsg(c, "回调地址配置错误")
+		common.ApiErrorMsg(c, "Callback address configuration error")
 		return
 	}
 
@@ -77,7 +76,7 @@ func SubscriptionRequestEpay(c *gin.Context) {
 
 	client := GetEpayClient()
 	if client == nil {
-		common.ApiErrorMsg(c, "当前管理员未配置支付信息")
+		common.ApiErrorMsg(c, "The current administrator has not configured payment information")
 		return
 	}
 
@@ -92,7 +91,7 @@ func SubscriptionRequestEpay(c *gin.Context) {
 		Status:          common.TopUpStatusPending,
 	}
 	if err := order.Insert(); err != nil {
-		common.ApiErrorMsg(c, "创建订单失败")
+		common.ApiErrorMsg(c, "Failed to create order")
 		return
 	}
 	uri, params, err := client.Purchase(&epay.PurchaseArgs{
@@ -106,7 +105,7 @@ func SubscriptionRequestEpay(c *gin.Context) {
 	})
 	if err != nil {
 		_ = model.ExpireSubscriptionOrder(tradeNo, model.PaymentProviderEpay)
-		common.ApiErrorMsg(c, "拉起支付失败")
+		common.ApiErrorMsg(c, "Failed to pull up payment")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": params, "url": uri})
@@ -173,7 +172,7 @@ func SubscriptionEpayReturn(c *gin.Context) {
 	if c.Request.Method == "POST" {
 		// POST 请求：从 POST body 解析参数
 		if err := c.Request.ParseForm(); err != nil {
-			c.Redirect(http.StatusFound, system_setting.ServerAddress+"/console/topup?pay=fail")
+			c.Redirect(http.StatusFound, getWalletReturnURL(true))
 			return
 		}
 		params = lo.Reduce(lo.Keys(c.Request.PostForm), func(r map[string]string, t string, i int) map[string]string {
@@ -189,29 +188,29 @@ func SubscriptionEpayReturn(c *gin.Context) {
 	}
 
 	if len(params) == 0 {
-		c.Redirect(http.StatusFound, system_setting.ServerAddress+"/console/topup?pay=fail")
+		c.Redirect(http.StatusFound, getWalletReturnURL(true))
 		return
 	}
 
 	client := GetEpayClient()
 	if client == nil {
-		c.Redirect(http.StatusFound, system_setting.ServerAddress+"/console/topup?pay=fail")
+		c.Redirect(http.StatusFound, getWalletReturnURL(true))
 		return
 	}
 	verifyInfo, err := client.Verify(params)
 	if err != nil || !verifyInfo.VerifyStatus {
-		c.Redirect(http.StatusFound, system_setting.ServerAddress+"/console/topup?pay=fail")
+		c.Redirect(http.StatusFound, getWalletReturnURL(true))
 		return
 	}
 	if verifyInfo.TradeStatus == epay.StatusTradeSuccess {
 		LockOrder(verifyInfo.ServiceTradeNo)
 		defer UnlockOrder(verifyInfo.ServiceTradeNo)
 		if err := model.CompleteSubscriptionOrder(verifyInfo.ServiceTradeNo, common.GetJsonString(verifyInfo), model.PaymentProviderEpay, verifyInfo.Type); err != nil {
-			c.Redirect(http.StatusFound, system_setting.ServerAddress+"/console/topup?pay=fail")
+			c.Redirect(http.StatusFound, getWalletReturnURL(true))
 			return
 		}
-		c.Redirect(http.StatusFound, system_setting.ServerAddress+"/console/topup?pay=success")
+		c.Redirect(http.StatusFound, getWalletReturnURL(true))
 		return
 	}
-	c.Redirect(http.StatusFound, system_setting.ServerAddress+"/console/topup?pay=pending")
+	c.Redirect(http.StatusFound, getWalletReturnURL(true))
 }

@@ -76,6 +76,18 @@ func updateUserCache(user User) error {
 	)
 }
 
+func WarmUserCacheAsync(user *User) {
+	if user == nil || user.Id == 0 || !common.RedisEnabled {
+		return
+	}
+	userSnapshot := *user
+	gopool.Go(func() {
+		if err := updateUserCache(userSnapshot); err != nil {
+			common.SysLog("failed to warm user cache after login: " + err.Error())
+		}
+	})
+}
+
 // GetUserCache gets complete user cache from hash
 func GetUserCache(userId int) (userCache *UserBase, err error) {
 	var user *User

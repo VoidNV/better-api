@@ -1,27 +1,8 @@
 import { useNavigate } from '@tanstack/react-router'
-import i18n from 'i18next'
-import { useAuthStore } from '@/stores/auth-store'
+import { useAuthStore, type AuthUser } from '@/stores/auth-store'
 import { getSelf } from '@/lib/api'
-import type { User } from '@/features/users/types'
+import { markAuthSessionVerified } from '@/lib/auth-session'
 import { saveUserId } from '../lib/storage'
-
-function getSavedLanguage(user: User): string | undefined {
-  const userData = user as Record<string, unknown>
-  if (typeof userData.language === 'string') {
-    return userData.language
-  }
-
-  if (typeof userData.setting !== 'string') {
-    return undefined
-  }
-
-  try {
-    const setting = JSON.parse(userData.setting) as { language?: unknown }
-    return typeof setting.language === 'string' ? setting.language : undefined
-  } catch {
-    return undefined
-  }
-}
 
 /**
  * Hook for handling authentication redirects and user data management
@@ -44,27 +25,37 @@ export function useAuthRedirect() {
       saveUserId(userData.id)
     }
 
-    // Fetch and set user data
-    try {
+    if (userData?.id) {
+      auth.setUser(userData as AuthUser)
+      markAuthSessionVerified()
+    }
+
+    const refreshUser = async () => {
       const self = await getSelf()
       if (self?.success && self.data) {
-        const user = self.data as User
+        const user = self.data as AuthUser
         auth.setUser(user)
+        markAuthSessionVerified()
 
         // Update user ID if not already set
         if (user.id) {
           saveUserId(user.id)
         }
-
-        // Restore saved language preference
-        const savedLang = getSavedLanguage(user)
-        if (savedLang && savedLang !== i18n.language) {
-          i18n.changeLanguage(savedLang)
-        }
       }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to fetch user data:', error)
+    }
+
+    if (userData?.id) {
+      void refreshUser().catch((error) => {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch user data:', error)
+      })
+    } else {
+      try {
+        await refreshUser()
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch user data:', error)
+      }
     }
 
     // Navigate to target page

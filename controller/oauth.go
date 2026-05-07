@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/i18n"
@@ -24,8 +26,14 @@ func GenerateOAuthCode(c *gin.Context) {
 	session := sessions.Default(c)
 	state := common.GetRandomString(12)
 	affCode := c.Query("aff")
+	inviteCode := strings.TrimSpace(c.Query("invite_code"))
 	if affCode != "" {
 		session.Set("aff", affCode)
+	}
+	if inviteCode != "" {
+		session.Set("oauth_invite_code", inviteCode)
+	} else {
+		session.Delete("oauth_invite_code")
 	}
 	session.Set("oauth_state", state)
 	err := session.Save()
@@ -106,10 +114,16 @@ func HandleOAuth(c *gin.Context) {
 	// 7. Find or create user
 	user, err := findOrCreateOAuthUser(c, provider, oauthUser, session)
 	if err != nil {
-		switch err.(type) {
-		case *OAuthUserDeletedError:
+		var userDeletedErr *OAuthUserDeletedError
+		var registrationDisabledErr *OAuthRegistrationDisabledError
+		switch {
+		case errors.Is(err, model.ErrInviteCodeExpired):
+			common.ApiErrorI18n(c, i18n.MsgUserInviteCodeExpired)
+		case errors.Is(err, model.ErrInviteCodeInvalid):
+			common.ApiErrorI18n(c, i18n.MsgUserInviteCodeInvalid)
+		case errors.As(err, &userDeletedErr):
 			common.ApiErrorI18n(c, i18n.MsgOAuthUserDeleted)
-		case *OAuthRegistrationDisabledError:
+		case errors.As(err, &registrationDisabledErr):
 			common.ApiErrorI18n(c, i18n.MsgUserRegisterDisabled)
 		default:
 			common.ApiError(c, err)
@@ -195,40 +209,48 @@ func handleOAuthBind(c *gin.Context, provider oauth.Provider) {
 	})
 }
 
+func findOAuthUserByProviderID(provider oauth.Provider, providerUserID string) (*model.User, bool, error) {
+	user := &model.User{}
+	err := provider.FillUserByProviderID(user, providerUserID)
+	if err == nil {
+		if user.Id != 0 {
+			return user, true, nil
+		}
+		if provider.IsUserIDTaken(providerUserID) {
+			return nil, true, &OAuthUserDeletedError{}
+		}
+		return nil, false, nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		if provider.IsUserIDTaken(providerUserID) {
+			return nil, true, &OAuthUserDeletedError{}
+		}
+		return nil, false, nil
+	}
+	return nil, false, err
+}
+
 // findOrCreateOAuthUser finds existing user or creates new user
 func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *oauth.OAuthUser, session sessions.Session) (*model.User, error) {
-	user := &model.User{}
-
-	// Check if user already exists with new ID
-	if provider.IsUserIDTaken(oauthUser.ProviderUserID) {
-		err := provider.FillUserByProviderID(user, oauthUser.ProviderUserID)
-		if err != nil {
-			return nil, err
-		}
-		// Check if user has been deleted
-		if user.Id == 0 {
-			return nil, &OAuthUserDeletedError{}
-		}
+	if user, found, err := findOAuthUserByProviderID(provider, oauthUser.ProviderUserID); err != nil {
+		return nil, err
+	} else if found {
 		return user, nil
 	}
 
 	// Try to find user with legacy ID (for GitHub migration from login to numeric ID)
 	if legacyID, ok := oauthUser.Extra["legacy_id"].(string); ok && legacyID != "" {
-		if provider.IsUserIDTaken(legacyID) {
-			err := provider.FillUserByProviderID(user, legacyID)
-			if err != nil {
-				return nil, err
+		if user, found, err := findOAuthUserByProviderID(provider, legacyID); err != nil {
+			return nil, err
+		} else if found {
+			// Found user with legacy ID, migrate to new ID
+			common.SysLog(fmt.Sprintf("[OAuth] Migrating user %d from legacy_id=%s to new_id=%s",
+				user.Id, legacyID, oauthUser.ProviderUserID))
+			if err := user.UpdateGitHubId(oauthUser.ProviderUserID); err != nil {
+				common.SysError(fmt.Sprintf("[OAuth] Failed to migrate user %d: %s", user.Id, err.Error()))
+				// Continue with login even if migration fails
 			}
-			if user.Id != 0 {
-				// Found user with legacy ID, migrate to new ID
-				common.SysLog(fmt.Sprintf("[OAuth] Migrating user %d from legacy_id=%s to new_id=%s",
-					user.Id, legacyID, oauthUser.ProviderUserID))
-				if err := user.UpdateGitHubId(oauthUser.ProviderUserID); err != nil {
-					common.SysError(fmt.Sprintf("[OAuth] Failed to migrate user %d: %s", user.Id, err.Error()))
-					// Continue with login even if migration fails
-				}
-				return user, nil
-			}
+			return user, nil
 		}
 	}
 
@@ -238,6 +260,7 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 	}
 
 	// Set up new user
+	user := &model.User{}
 	user.Username = provider.GetProviderPrefix() + strconv.Itoa(model.GetMaxUserId()+1)
 
 	if oauthUser.Username != "" {
@@ -268,11 +291,31 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 	if affCode != nil {
 		inviterId, _ = model.GetUserIdByAffCode(affCode.(string))
 	}
+	inviteCodeText := ""
+	if inviteCodeValue := session.Get("oauth_invite_code"); inviteCodeValue != nil {
+		inviteCodeText, _ = inviteCodeValue.(string)
+	}
+	inviteCodeText = strings.TrimSpace(inviteCodeText)
+	if common.InviteCodeRequired && inviteCodeText == "" {
+		return nil, model.ErrInviteCodeInvalid
+	}
 
 	// Use transaction to ensure user creation and OAuth binding are atomic
 	if genericProvider, ok := provider.(*oauth.GenericOAuthProvider); ok {
 		// Custom provider: create user and binding in a transaction
 		err := model.DB.Transaction(func(tx *gorm.DB) error {
+			var inviteCode *model.InviteCode
+			if common.InviteCodeRequired {
+				var err error
+				inviteCode, err = model.GetAndLockInviteCode(tx, inviteCodeText)
+				if err != nil {
+					return err
+				}
+				if err := inviteCode.ValidateConsumable(); err != nil {
+					return err
+				}
+			}
+
 			// Create user
 			if err := user.InsertWithTx(tx, inviterId); err != nil {
 				return err
@@ -288,6 +331,9 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 				return err
 			}
 
+			if common.InviteCodeRequired {
+				return inviteCode.MarkUsed(tx, user.Id)
+			}
 			return nil
 		})
 		if err != nil {
@@ -299,6 +345,18 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 	} else {
 		// Built-in provider: create user and update provider ID in a transaction
 		err := model.DB.Transaction(func(tx *gorm.DB) error {
+			var inviteCode *model.InviteCode
+			if common.InviteCodeRequired {
+				var err error
+				inviteCode, err = model.GetAndLockInviteCode(tx, inviteCodeText)
+				if err != nil {
+					return err
+				}
+				if err := inviteCode.ValidateConsumable(); err != nil {
+					return err
+				}
+			}
+
 			// Create user
 			if err := user.InsertWithTx(tx, inviterId); err != nil {
 				return err
@@ -317,6 +375,9 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 				return err
 			}
 
+			if common.InviteCodeRequired {
+				return inviteCode.MarkUsed(tx, user.Id)
+			}
 			return nil
 		})
 		if err != nil {
@@ -327,6 +388,7 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 		user.FinalizeOAuthUserCreation(inviterId)
 	}
 
+	session.Delete("oauth_invite_code")
 	return user, nil
 }
 

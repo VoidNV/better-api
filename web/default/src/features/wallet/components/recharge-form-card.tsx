@@ -27,6 +27,7 @@ import {
   getMinTopupAmount,
   calculatePresetPricing,
 } from '../lib'
+import { PAYMENT_TYPES } from '../constants'
 import type {
   PaymentMethod,
   PresetAmount,
@@ -113,6 +114,7 @@ export function RechargeFormCard({
   const hasConfigurableTopup =
     topupInfo?.enable_online_topup ||
     topupInfo?.enable_stripe_topup ||
+    topupInfo?.enable_nowpayments_topup ||
     enableWaffoTopup ||
     enableWaffoPancakeTopup
   const hasAnyTopup = hasConfigurableTopup || enableCreemTopup
@@ -297,6 +299,11 @@ export function RechargeFormCard({
                       {topupInfo?.pay_methods?.map((method) => {
                         const minTopup = method.min_topup || 0
                         const disabled = minTopup > topupAmount
+                        const methodLabel =
+                          method.type === PAYMENT_TYPES.NOWPAYMENTS &&
+                          minTopup > 0
+                            ? `${method.name} (${formatCurrency(minTopup)})`
+                            : method.name
 
                         const button = (
                           <Button
@@ -313,10 +320,10 @@ export function RechargeFormCard({
                                 method.type,
                                 'h-4 w-4',
                                 method.icon,
-                                method.name
+                                methodLabel
                               )
                             )}
-                            <span className='truncate'>{method.name}</span>
+                            <span className='truncate'>{methodLabel}</span>
                           </Button>
                         )
 
@@ -340,7 +347,7 @@ export function RechargeFormCard({
                     <Alert>
                       <AlertDescription>
                         {t(
-                          'No payment methods available. Please contact administrator.'
+                          'Currently Integrated Payment does not work, Please use: xxxx'
                         )}
                       </AlertDescription>
                     </Alert>
@@ -410,7 +417,7 @@ export function RechargeFormCard({
           <Alert>
             <AlertDescription>
               {t(
-                'Online topup is not enabled. Please use redemption code or contact administrator.'
+                'Currently Integrated Payment does not work, Please use: xxxx'
               )}
             </AlertDescription>
           </Alert>

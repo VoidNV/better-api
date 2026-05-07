@@ -37,19 +37,19 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 		delta := actualQuota - preConsumed
 
 		if delta > 0 {
-			logger.LogInfo(ctx, fmt.Sprintf("预扣费后补扣费：%s（实际消耗：%s，预扣费：%s）",
+			logger.LogInfo(ctx, fmt.Sprintf("Additional deduction after withholding fee: %s (actual consumption: %s, withholding fee: %s)",
 				logger.FormatQuota(delta),
 				logger.FormatQuota(actualQuota),
 				logger.FormatQuota(preConsumed),
 			))
 		} else if delta < 0 {
-			logger.LogInfo(ctx, fmt.Sprintf("预扣费后返还扣费：%s（实际消耗：%s，预扣费：%s）",
+			logger.LogInfo(ctx, fmt.Sprintf("Return deduction after withholding fee: %s (actual consumption: %s, withholding fee: %s)",
 				logger.FormatQuota(-delta),
 				logger.FormatQuota(actualQuota),
 				logger.FormatQuota(preConsumed),
 			))
 		} else {
-			logger.LogInfo(ctx, fmt.Sprintf("预扣费与实际消耗一致，无需调整：%s（按次计费）",
+			logger.LogInfo(ctx, fmt.Sprintf("The withholding fee is consistent with the actual consumption and no adjustment is required: %s (pay-per-view)",
 				logger.FormatQuota(actualQuota),
 			))
 		}

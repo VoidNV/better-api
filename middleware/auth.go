@@ -39,6 +39,7 @@ func authHelper(c *gin.Context, minRole int) {
 	role := session.Get("role")
 	id := session.Get("id")
 	status := session.Get("status")
+	group := session.Get("group")
 	useAccessToken := false
 	if username == nil {
 		// Check access token
@@ -82,6 +83,7 @@ func authHelper(c *gin.Context, minRole int) {
 			role = user.Role
 			id = user.Id
 			status = user.Status
+			group = user.Group
 			useAccessToken = true
 		} else {
 			c.JSON(http.StatusOK, gin.H{
@@ -149,8 +151,8 @@ func authHelper(c *gin.Context, minRole int) {
 	c.Set("username", username)
 	c.Set("role", role)
 	c.Set("id", id)
-	c.Set("group", session.Get("group"))
-	c.Set("user_group", session.Get("group"))
+	c.Set("group", group)
+	c.Set("user_group", group)
 	c.Set("use_access_token", useAccessToken)
 
 	c.Next()
@@ -354,11 +356,11 @@ func TokenAuth() func(c *gin.Context) {
 			logger.LogDebug(c, "Token has IP restrictions, checking client IP %s", clientIp)
 			ip := net.ParseIP(clientIp)
 			if ip == nil {
-				abortWithOpenAiMessage(c, http.StatusForbidden, "无法解析客户端 IP 地址")
+				abortWithOpenAiMessage(c, http.StatusForbidden, "Unable to resolve client IP address")
 				return
 			}
 			if common.IsIpInCIDRList(ip, allowIps) == false {
-				abortWithOpenAiMessage(c, http.StatusForbidden, "您的 IP 不在令牌允许访问的列表中", types.ErrorCodeAccessDenied)
+				abortWithOpenAiMessage(c, http.StatusForbidden, "Your IP is not in the list allowed by the token", types.ErrorCodeAccessDenied)
 				return
 			}
 			logger.LogDebug(c, "Client IP %s passed the token IP restrictions check", clientIp)
@@ -384,13 +386,13 @@ func TokenAuth() func(c *gin.Context) {
 		if tokenGroup != "" {
 			// check common.UserUsableGroups[userGroup]
 			if _, ok := service.GetUserUsableGroups(userGroup)[tokenGroup]; !ok {
-				abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("无权访问 %s 分组", tokenGroup))
+				abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("No access to group %s", tokenGroup))
 				return
 			}
 			// check group in common.GroupRatio
 			if !ratio_setting.ContainsGroupRatio(tokenGroup) {
 				if tokenGroup != "auto" {
-					abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("分组 %s 已被弃用", tokenGroup))
+					abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("Group %s is deprecated", tokenGroup))
 					return
 				}
 			}
@@ -431,8 +433,8 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 			c.Set("specific_channel_id", parts[1])
 		} else {
 			c.Header("specific_channel_version", "701e3ae1dc3f7975556d354e0675168d004891c8")
-			abortWithOpenAiMessage(c, http.StatusForbidden, "普通用户不支持指定渠道")
-			return fmt.Errorf("普通用户不支持指定渠道")
+			abortWithOpenAiMessage(c, http.StatusForbidden, "Ordinary users do not support designated channels")
+			return fmt.Errorf("Ordinary users do not support designated channels")
 		}
 	}
 	return nil

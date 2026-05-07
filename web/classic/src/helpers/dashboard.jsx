@@ -156,7 +156,7 @@ export const handleCopyUrl = async (url, t) => {
 
 export const handleSpeedTest = (apiUrl) => {
   const encodedUrl = encodeURIComponent(apiUrl);
-  const speedTestUrl = `https://www.tcptest.cn/http/${encodedUrl}`;
+  const speedTestUrl = `https://check-host.cc/http?host=${encodedUrl}`;
   window.open(speedTestUrl, '_blank', 'noopener,noreferrer');
 };
 
