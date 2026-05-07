@@ -108,11 +108,16 @@
 git clone https://github.com/QuantumNous/new-api.git
 cd new-api
 
-# Edit docker-compose.yml configuration
-nano docker-compose.yml
+# Create local secrets. This file is ignored by git.
+cp .env.example .env
+nano .env
+
+# Set at least:
+# POSTGRES_PASSWORD=your-postgres-password
+# REDIS_PASSWORD=your-redis-password
 
 # Start the service
-docker-compose up -d
+docker compose up -d
 ```
 
 <details>
@@ -132,7 +137,7 @@ docker run --name new-api -d --restart always \
 # Using MySQL
 docker run --name new-api -d --restart always \
   -p 3000:3000 \
-  -e SQL_DSN="root:123456@tcp(localhost:3306)/oneapi" \
+  -e SQL_DSN="root:your-mysql-password@tcp(localhost:3306)/oneapi" \
   -e TZ=Asia/Shanghai \
   -v ./data:/data \
   calciumion/new-api:latest
@@ -303,6 +308,9 @@ docker run --name new-api -d --restart always \
 |--------|------|--------|
 | `SESSION_SECRET` | Session secret (required for multi-machine deployment) | - |
 | `CRYPTO_SECRET` | Encryption secret (required for Redis) | - |
+| `POSTGRES_PASSWORD` | PostgreSQL password used by the included Docker Compose stack | - |
+| `REDIS_PASSWORD` | Redis password used by the included Docker Compose stack | - |
+| `MYSQL_ROOT_PASSWORD` | MySQL root password used by the optional Docker Compose MySQL service | - |
 | `SQL_DSN` | Database connection string | - |
 | `REDIS_CONN_STRING` | Redis connection string | - |
 | `STREAMING_TIMEOUT` | Streaming timeout (seconds) | `300` |
@@ -332,11 +340,16 @@ docker run --name new-api -d --restart always \
 git clone https://github.com/QuantumNous/new-api.git
 cd new-api
 
-# Edit configuration
-nano docker-compose.yml
+# Create local secrets. This file is ignored by git.
+cp .env.example .env
+nano .env
+
+# Set at least:
+# POSTGRES_PASSWORD=your-postgres-password
+# REDIS_PASSWORD=your-redis-password
 
 # Start service
-docker-compose up -d
+docker compose up -d
 ```
 
 </details>
@@ -357,7 +370,7 @@ docker run --name new-api -d --restart always \
 ```bash
 docker run --name new-api -d --restart always \
   -p 3000:3000 \
-  -e SQL_DSN="root:123456@tcp(localhost:3306)/oneapi" \
+  -e SQL_DSN="root:your-mysql-password@tcp(localhost:3306)/oneapi" \
   -e TZ=Asia/Shanghai \
   -v ./data:/data \
   calciumion/new-api:latest
