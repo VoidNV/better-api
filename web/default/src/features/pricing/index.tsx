@@ -132,7 +132,7 @@ export function Pricing() {
       <PublicLayout showMainContainer={false}>
         <Seo
           title='Model Pricing'
-          description='Compare available AI models, provider coverage, endpoint support, and pricing before routing production traffic through New API.'
+          description='Compare AI model pricing across providers. View input, output, and cached token costs for all available models.'
           path='/pricing'
           jsonLd={buildBreadcrumbJsonLd([
             { name: 'Home', path: '/' },
@@ -150,7 +150,7 @@ export function Pricing() {
     <PublicLayout showMainContainer={false}>
       <Seo
         title='Model Pricing'
-        description='Compare available AI models, provider coverage, endpoint support, and pricing before routing production traffic through New API.'
+        description='Compare AI model pricing across providers. View input, output, and cached token costs for all available models.'
         path='/pricing'
         jsonLd={buildBreadcrumbJsonLd([
           { name: 'Home', path: '/' },
@@ -174,23 +174,19 @@ export function Pricing() {
         <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
             <p className='text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase'>
-              {t('Models Directory')}
+              {t('Pricing')}
             </p>
             <h1
-              id='model-hub-title'
+              id='model-pricing-title'
               className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'
             >
-              {t('Model Hub')}
+              {t('Model Pricing')}
             </h1>
             <p className='text-muted-foreground/80 mt-3 text-sm sm:mt-4 sm:text-base'>
-              {t('This site currently has {{count}} models enabled', {
-                count: models?.length || 0,
-              })}
+              {t('{{count}} models available', { count: models?.length || 0 })}
             </p>
             <p className='text-muted-foreground/60 mx-auto mt-2 max-w-2xl text-xs leading-relaxed sm:text-sm'>
-              {t(
-                'Discover curated AI models, compare pricing and capabilities, and choose the right model for every scenario.'
-              )}
+              {t('Compare pricing across providers and find the right model for your use case.')}
             </p>
             <SearchBar
               value={searchInput}
@@ -223,7 +219,7 @@ export function Pricing() {
               className='sticky top-20 hidden max-h-[calc(100vh-6rem)] overflow-y-auto xl:block'
             />
 
-            <section className='min-w-0 space-y-4' aria-labelledby='model-hub-title'>
+            <section className='min-w-0 space-y-4' aria-labelledby='model-pricing-title'>
               <PricingToolbar
                 filteredCount={filteredModels.length}
                 totalCount={models?.length}

@@ -259,10 +259,11 @@ export function SignUpForm({
               <FormLabel>{t('Password')}</FormLabel>
               <FormControl>
                 <PasswordInput
-                  placeholder={t('Enter password (8-20 characters)')}
+                  placeholder={t('Enter password')}
                   {...field}
                 />
               </FormControl>
+              <p className='text-muted-foreground text-xs'>{t('8–20 characters')}</p>
               <FormMessage />
             </FormItem>
           )}
@@ -293,7 +294,7 @@ export function SignUpForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {t('Email (required for verification)')}
+                    {t('Email')} <span className='text-destructive text-xs'>*</span>
                   </FormLabel>
                   <FormControl>
                     <Input

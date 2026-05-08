@@ -136,14 +136,12 @@ export function Footer(props: FooterProps) {
               </span>
             </Link>
             <p className='text-muted-foreground/60 mt-3 max-w-[220px] text-xs leading-relaxed'>
-              {t(
-                'One API for supported AI providers, with centralized billing and prepaid platform credit.'
-              )}
+              {t('Unified API gateway for AI providers with centralized billing.')}
             </p>
           </div>
 
           {/* Links columns */}
-          {isDemoSiteMode && (
+          {displayColumns.length > 0 && (
             <div className='grid grid-cols-3 gap-8 md:gap-16'>
               {displayColumns.map((column, index) => (
                 <div key={index}>

@@ -64,7 +64,7 @@ export function Hero(props: HeroProps) {
         >
           <span className='block'>{t('Unified AI access')}</span>
           <span className='block text-[#6e6e73] dark:text-white/55'>
-            {t('for production teams.')}
+            {t('designed for scale.')}
           </span>
         </motion.h1>
 
@@ -102,7 +102,7 @@ export function Hero(props: HeroProps) {
                 className='bg-primary text-primary-foreground group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-lg px-6 text-sm font-medium shadow-sm transition-all hover:opacity-90 active:scale-[0.98]'
               >
                 <Sparkles className='size-3.5' />
-                {t('Create workspace')}
+                {t('Get started free')}
                 <ArrowUpRight className='size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
               </Link>
               <Link

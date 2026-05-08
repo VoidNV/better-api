@@ -31,19 +31,19 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
     {
       label: t('Current Balance'),
       value: formatQuota(props.user?.quota ?? 0),
-      description: t('Remaining quota'),
+      description: t('Available API credit'),
       icon: WalletCards,
     },
     {
       label: t('Total Usage'),
       value: formatQuota(props.user?.used_quota ?? 0),
-      description: t('Total consumed quota'),
+      description: t('Lifetime spend'),
       icon: BarChart3,
     },
     {
       label: t('API Requests'),
       value: (props.user?.request_count ?? 0).toLocaleString(),
-      description: t('Total requests made'),
+      description: t('Lifetime API calls'),
       icon: Activity,
     },
   ]

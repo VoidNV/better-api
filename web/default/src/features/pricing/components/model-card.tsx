@@ -183,7 +183,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       <div className='mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 sm:mt-4'>
         {primaryGroup && (
           <span className='text-muted-foreground text-xs font-medium'>
-            {primaryGroup} {t('Groups')}
+            {t('Group:')} {primaryGroup}
           </span>
         )}
         <span className='text-muted-foreground text-xs font-medium'>

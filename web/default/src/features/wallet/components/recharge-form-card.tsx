@@ -243,11 +243,11 @@ export function RechargeFormCard({
                               )}
                             </div>
                             <div className='text-muted-foreground mt-1.5 w-full text-xs sm:mt-2'>
-                              Pay {formatCurrency(actualPrice)}
+                              {t('Pay')} {formatCurrency(actualPrice)}
                               {hasDiscount && savedAmount > 0 && (
                                 <span className='text-green-600'>
                                   {' '}
-                                  • Save {formatCurrency(savedAmount)}
+                                  • {t('Save')} {formatCurrency(savedAmount)}
                                 </span>
                               )}
                             </div>
@@ -347,7 +347,7 @@ export function RechargeFormCard({
                     <Alert>
                       <AlertDescription>
                         {t(
-                          'Currently Integrated Payment does not work, Please use: xxxx'
+                          'Online payment is not currently configured. Please contact the administrator.'
                         )}
                       </AlertDescription>
                     </Alert>
@@ -417,7 +417,7 @@ export function RechargeFormCard({
           <Alert>
             <AlertDescription>
               {t(
-                'Currently Integrated Payment does not work, Please use: xxxx'
+                'Online payment is not currently configured. Please contact the administrator.'
               )}
             </AlertDescription>
           </Alert>
@@ -447,7 +447,7 @@ export function RechargeFormCard({
               htmlFor='redemption-code'
               className='text-muted-foreground text-xs font-medium tracking-wider uppercase'
             >
-              {t('Have a Code?')}
+              {t('Redemption Code')}
             </Label>
           </div>
           <div className='grid grid-cols-[minmax(0,1fr)_auto] gap-2'>
@@ -470,14 +470,14 @@ export function RechargeFormCard({
           </div>
           {topupLink && (
             <p className='text-muted-foreground text-xs'>
-              {t('Need a code?')}{' '}
+              {t('Get a top-up code')}{' '}
               <a
                 href={topupLink}
                 target='_blank'
                 rel='noopener noreferrer'
                 className='inline-flex items-center gap-1 underline-offset-4 hover:underline'
               >
-                {t('Purchase here')}
+                {t('Buy code')}
                 <ExternalLink className='h-3 w-3' />
               </a>
             </p>
