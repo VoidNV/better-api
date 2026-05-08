@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { ROLE } from '@/lib/roles'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +38,7 @@ type WorkspaceSwitcherProps = {
  */
 export function WorkspaceSwitcher({
   workspaces,
-  defaultName = 'New API',
+  defaultName = DEFAULT_SYSTEM_NAME,
   defaultVersion,
 }: WorkspaceSwitcherProps) {
   const { t } = useTranslation()

@@ -5,6 +5,7 @@ import { Markdown } from '@/components/ui/markdown'
 import { PublicLayout } from '@/components/layout'
 import { Footer } from '@/components/layout/components/footer'
 import { Seo, buildWebsiteJsonLd, seoDefaults } from '@/lib/seo'
+import { useSystemConfig } from '@/hooks/use-system-config'
 import { Hero, HowItWorks, Stats } from './components'
 import { useHomePageContent } from './hooks'
 
@@ -13,6 +14,7 @@ export function Home() {
   const { auth } = useAuthStore()
   const isAuthenticated = !!auth.user
   const { content, isLoaded, isUrl } = useHomePageContent()
+  const { systemName } = useSystemConfig()
 
   // Landing-specific polish without overriding the user's selected theme.
   useEffect(() => {
@@ -29,7 +31,7 @@ export function Home() {
         <Seo
           description={seoDefaults.description}
           path='/'
-          jsonLd={buildWebsiteJsonLd()}
+          jsonLd={buildWebsiteJsonLd(systemName)}
         />
         <main className='bg-background flex min-h-screen items-center justify-center'>
           <div className='text-muted-foreground font-mono text-xs tracking-widest uppercase'>
@@ -47,7 +49,7 @@ export function Home() {
         <Seo
           description={seoDefaults.description}
           path='/'
-          jsonLd={buildWebsiteJsonLd()}
+          jsonLd={buildWebsiteJsonLd(systemName)}
         />
         <main className='overflow-x-hidden'>
           {isUrl ? (
@@ -71,7 +73,7 @@ export function Home() {
       <Seo
         description={seoDefaults.description}
         path='/'
-        jsonLd={buildWebsiteJsonLd()}
+        jsonLd={buildWebsiteJsonLd(systemName)}
       />
       <main className='relative min-h-screen overflow-x-hidden bg-[#f5f5f7] text-[#1d1d1f] dark:bg-[#050506] dark:text-white'>
         {/* Global grain / vignette */}

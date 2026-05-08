@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
+import { useSystemConfigStore } from '@/stores/system-config-store'
+import { DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 
-const SITE_NAME = 'New API'
 const DEFAULT_DESCRIPTION =
   'A unified AI API gateway with multi-provider access, centralized billing, and model management.'
 const DEFAULT_IMAGE = '/logo.png'
@@ -15,6 +16,14 @@ type SeoProps = {
   image?: string
   robots?: string
   jsonLd?: JsonLdValue
+}
+
+function normalizeSystemName(value: string | undefined) {
+  return value?.trim() || DEFAULT_SYSTEM_NAME
+}
+
+function getSystemName() {
+  return normalizeSystemName(useSystemConfigStore.getState().config.systemName)
 }
 
 function getSiteOrigin() {
@@ -97,7 +106,10 @@ function setJsonLd(value: JsonLdValue | undefined) {
 }
 
 export function Seo(props: SeoProps) {
-  const title = props.title ? `${props.title} | ${SITE_NAME}` : SITE_NAME
+  const siteName = useSystemConfigStore((state) =>
+    normalizeSystemName(state.config.systemName)
+  )
+  const title = props.title ? `${props.title} | ${siteName}` : siteName
   const description = props.description ?? DEFAULT_DESCRIPTION
   const canonicalUrl = getCanonicalUrl(props.path)
   const imageUrl = getAbsoluteAssetUrl(props.image ?? DEFAULT_IMAGE)
@@ -129,13 +141,14 @@ export function Seo(props: SeoProps) {
 }
 
 export const seoDefaults = {
-  siteName: SITE_NAME,
+  siteName: DEFAULT_SYSTEM_NAME,
   description: DEFAULT_DESCRIPTION,
   image: DEFAULT_IMAGE,
 }
 
-export function buildWebsiteJsonLd() {
+export function buildWebsiteJsonLd(systemName?: string) {
   const origin = getSiteOrigin()
+  const siteName = normalizeSystemName(systemName ?? getSystemName())
 
   if (!origin) return undefined
 
@@ -143,14 +156,14 @@ export function buildWebsiteJsonLd() {
     {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: SITE_NAME,
+      name: siteName,
       url: origin,
       logo: getAbsoluteAssetUrl(DEFAULT_IMAGE),
     },
     {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
-      name: SITE_NAME,
+      name: siteName,
       url: origin,
       potentialAction: {
         '@type': 'SearchAction',

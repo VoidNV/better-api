@@ -1,5 +1,6 @@
 import { useParams } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 import { parseCurrencyDisplayType } from '@/lib/currency'
 import { useSystemOptions, getOptionValue } from '../hooks/use-system-options'
 import type { GeneralSettings } from '../types'
@@ -11,7 +12,7 @@ import {
 const defaultGeneralSettings: GeneralSettings = {
   'theme.frontend': 'default',
   Notice: '',
-  SystemName: 'New API',
+  SystemName: DEFAULT_SYSTEM_NAME,
   Logo: '',
   Footer: '',
   About: '',
