@@ -1,3 +1,15 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { Seo } from '@/lib/seo'
 
-export const Route = createFileRoute('/(auth)')({})
+function AuthLayout() {
+  return (
+    <>
+      <Seo robots='noindex,follow,max-image-preview:large' />
+      <Outlet />
+    </>
+  )
+}
+
+export const Route = createFileRoute('/(auth)')({
+  component: AuthLayout,
+})

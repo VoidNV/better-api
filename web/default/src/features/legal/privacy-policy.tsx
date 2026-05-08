@@ -12,6 +12,8 @@ export function PrivacyPolicy() {
       emptyMessage={t(
         'The administrator has not configured a privacy policy yet.'
       )}
+      path='/privacy-policy'
+      description='Read the New API privacy policy for data handling, account information, billing records, and platform usage details.'
     />
   )
 }

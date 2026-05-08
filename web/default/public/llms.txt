@@ -1,0 +1,16 @@
+# New API
+
+New API is a unified AI API gateway for routing requests to supported AI providers with centralized billing, model management, and usage visibility.
+
+## Public Pages
+
+- /: Product overview and gateway positioning.
+- /pricing: Model directory with pricing, provider, endpoint, and tag filters.
+- /about: Organization and platform information.
+- /privacy-policy: Privacy policy.
+- /user-agreement: User agreement.
+
+## Notes
+
+- API traffic is routed through /v1-compatible endpoints.
+- Pricing availability depends on the administrator's configured providers and models.

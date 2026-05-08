@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Markdown } from '@/components/ui/markdown'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PublicLayout } from '@/components/layout'
+import { Seo, buildBreadcrumbJsonLd } from '@/lib/seo'
 import type { LegalDocumentResponse } from './types'
 
 type LegalDocumentProps = {
@@ -13,6 +14,8 @@ type LegalDocumentProps = {
   queryKey: string
   fetchDocument: () => Promise<LegalDocumentResponse>
   emptyMessage: string
+  path: string
+  description: string
 }
 
 function isValidUrl(value: string) {
@@ -33,6 +36,8 @@ export function LegalDocument({
   queryKey,
   fetchDocument,
   emptyMessage,
+  path,
+  description,
 }: LegalDocumentProps) {
   const { t } = useTranslation()
   const { data, isLoading } = useQuery({
@@ -50,6 +55,16 @@ export function LegalDocument({
   if (isLoading) {
     return (
       <PublicLayout>
+        <Seo
+          title={title}
+          description={description}
+          path={path}
+          robots='noindex,follow,max-image-preview:large'
+          jsonLd={buildBreadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: title, path },
+          ])}
+        />
         <div className='mx-auto flex max-w-4xl flex-col gap-4 py-12'>
           <Skeleton className='h-8 w-[45%]' />
           <Skeleton className='h-4 w-full' />
@@ -63,6 +78,16 @@ export function LegalDocument({
   if (!success || !hasContent) {
     return (
       <PublicLayout>
+        <Seo
+          title={title}
+          description={description}
+          path={path}
+          robots='noindex,follow,max-image-preview:large'
+          jsonLd={buildBreadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: title, path },
+          ])}
+        />
         <div className='mx-auto max-w-2xl py-12'>
           <Card className='border-dashed'>
             <CardHeader className='flex flex-row items-center gap-4'>
@@ -85,6 +110,15 @@ export function LegalDocument({
   if (isUrl) {
     return (
       <PublicLayout>
+        <Seo
+          title={title}
+          description={description}
+          path={path}
+          jsonLd={buildBreadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: title, path },
+          ])}
+        />
         <div className='mx-auto max-w-2xl py-12'>
           <Card>
             <CardHeader>
@@ -110,6 +144,15 @@ export function LegalDocument({
 
   return (
     <PublicLayout>
+      <Seo
+        title={title}
+        description={description}
+        path={path}
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: title, path },
+        ])}
+      />
       <div className='mx-auto max-w-4xl space-y-6 py-12'>
         <div className='space-y-2'>
           <h1 className='text-3xl font-semibold tracking-tight'>{title}</h1>

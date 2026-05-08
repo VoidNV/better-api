@@ -12,6 +12,8 @@ export function UserAgreement() {
       emptyMessage={t(
         'The administrator has not configured a user agreement yet.'
       )}
+      path='/user-agreement'
+      description='Review the New API user agreement for account access, acceptable use, billing, service availability, and platform responsibilities.'
     />
   )
 }

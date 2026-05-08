@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PublicLayout } from '@/components/layout'
 import { PageTransition } from '@/components/page-transition'
+import { Seo, buildBreadcrumbJsonLd } from '@/lib/seo'
 import {
   LoadingSkeleton,
   EmptyState,
@@ -129,6 +130,15 @@ export function Pricing() {
   if (isLoading) {
     return (
       <PublicLayout showMainContainer={false}>
+        <Seo
+          title='Model Pricing'
+          description='Compare available AI models, provider coverage, endpoint support, and pricing before routing production traffic through New API.'
+          path='/pricing'
+          jsonLd={buildBreadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Model Pricing', path: '/pricing' },
+          ])}
+        />
         <div className='mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <LoadingSkeleton viewMode={viewMode} />
         </div>
@@ -138,7 +148,16 @@ export function Pricing() {
 
   return (
     <PublicLayout showMainContainer={false}>
-      <div className='relative'>
+      <Seo
+        title='Model Pricing'
+        description='Compare available AI models, provider coverage, endpoint support, and pricing before routing production traffic through New API.'
+        path='/pricing'
+        jsonLd={buildBreadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Model Pricing', path: '/pricing' },
+        ])}
+      />
+      <main className='relative'>
         <div
           aria-hidden
           className='pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.10]'
@@ -157,7 +176,10 @@ export function Pricing() {
             <p className='text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase'>
               {t('Models Directory')}
             </p>
-            <h1 className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'>
+            <h1
+              id='model-hub-title'
+              className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'
+            >
               {t('Model Hub')}
             </h1>
             <p className='text-muted-foreground/80 mt-3 text-sm sm:mt-4 sm:text-base'>
@@ -201,7 +223,7 @@ export function Pricing() {
               className='sticky top-20 hidden max-h-[calc(100vh-6rem)] overflow-y-auto xl:block'
             />
 
-            <main className='min-w-0 space-y-4'>
+            <section className='min-w-0 space-y-4' aria-labelledby='model-hub-title'>
               <PricingToolbar
                 filteredCount={filteredModels.length}
                 totalCount={models?.length}
@@ -234,7 +256,7 @@ export function Pricing() {
               />
 
               {renderPricingContent()}
-            </main>
+            </section>
           </div>
 
           {selectedModel && (
@@ -260,7 +282,7 @@ export function Pricing() {
             />
           )}
         </PageTransition>
-      </div>
+      </main>
     </PublicLayout>
   )
 }

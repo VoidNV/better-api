@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { Markdown } from '@/components/ui/markdown'
 import { PublicLayout } from '@/components/layout'
 import { Footer } from '@/components/layout/components/footer'
+import { Seo, buildWebsiteJsonLd, seoDefaults } from '@/lib/seo'
 import { Hero, HowItWorks, Stats } from './components'
 import { useHomePageContent } from './hooks'
 
@@ -25,6 +26,11 @@ export function Home() {
   if (!isLoaded) {
     return (
       <PublicLayout showMainContainer={false}>
+        <Seo
+          description={seoDefaults.description}
+          path='/'
+          jsonLd={buildWebsiteJsonLd()}
+        />
         <main className='bg-background flex min-h-screen items-center justify-center'>
           <div className='text-muted-foreground font-mono text-xs tracking-widest uppercase'>
             {t('Loading')}
@@ -38,6 +44,11 @@ export function Home() {
   if (content) {
     return (
       <PublicLayout showMainContainer={false}>
+        <Seo
+          description={seoDefaults.description}
+          path='/'
+          jsonLd={buildWebsiteJsonLd()}
+        />
         <main className='overflow-x-hidden'>
           {isUrl ? (
             <iframe
@@ -57,7 +68,12 @@ export function Home() {
 
   return (
     <PublicLayout showMainContainer={false}>
-      <div className='relative min-h-screen overflow-x-hidden bg-[#f5f5f7] text-[#1d1d1f] dark:bg-[#050506] dark:text-white'>
+      <Seo
+        description={seoDefaults.description}
+        path='/'
+        jsonLd={buildWebsiteJsonLd()}
+      />
+      <main className='relative min-h-screen overflow-x-hidden bg-[#f5f5f7] text-[#1d1d1f] dark:bg-[#050506] dark:text-white'>
         {/* Global grain / vignette */}
         <div
           aria-hidden
@@ -71,7 +87,7 @@ export function Home() {
         <Stats />
         <HowItWorks />
         <Footer className='border-black/[0.06] bg-[#f5f5f7] dark:border-white/[0.06] dark:bg-[#050506]' />
-      </div>
+      </main>
     </PublicLayout>
   )
 }

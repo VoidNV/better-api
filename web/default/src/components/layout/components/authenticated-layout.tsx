@@ -5,6 +5,7 @@ import { SearchProvider } from '@/context/search-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AnimatedOutlet } from '@/components/page-transition'
 import { SkipToMain } from '@/components/skip-to-main'
+import { Seo } from '@/lib/seo'
 import { WorkspaceProvider } from '../context/workspace-context'
 import { AppSidebar } from './app-sidebar'
 
@@ -17,6 +18,7 @@ export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
 
   return (
     <LayoutProvider>
+      <Seo robots='noindex,nofollow' />
       <SearchProvider>
         <WorkspaceProvider>
           <SidebarProvider defaultOpen={defaultOpen}>
