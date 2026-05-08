@@ -179,9 +179,12 @@ func GetContextKeyType[T any](c *gin.Context, key constant.ContextKey) (T, bool)
 }
 
 func ApiError(c *gin.Context, err error) {
+	if err != nil {
+		SysError(err.Error())
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": false,
-		"message": err.Error(),
+		"message": "Request failed",
 	})
 }
 
